@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen · Lentes inteligentes de alfabetización (prototipo)</title>
+<style>
+:root{
+  --bg:#06060b; --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06); --line:rgba(255,232,190,.14);
+  --txt:#f4eee4; --mut:#968fa6; --lux:#ffd98a; --cy:#ffd98a; --vi:#a78bff; --ok:#8dffb4;
+  --att:#6df7d0; --fat:#ffb347; --fru:#ff5a7a; --con:#a78bff; --auraC:#6df7d0;
+  --f:"Bahnschrift","Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,sans-serif; --mono:var(--f);
+}
+*{box-sizing:border-box}
+html,body{margin:0;color:var(--txt);font:14px/1.45 var(--f);font-variant-numeric:tabular-nums;
+  background:radial-gradient(900px 520px at 12% -12%,rgba(255,170,90,.11),transparent 60%),radial-gradient(900px 620px at 100% 0,rgba(120,100,255,.11),transparent 60%),var(--bg);min-height:100%}
+header{display:flex;align-items:center;gap:14px;padding:18px 26px}
+header h1{margin:0;font-size:18px;letter-spacing:.55em;font-weight:300}
+.lens{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff 0 8%,#ffe9b8 18%,#ffb86b 48%,#7a4bff 100%);box-shadow:0 0 18px rgba(255,190,110,.6)}
+main{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(310px,1fr);gap:18px;padding:6px 26px 26px;max-width:1500px;margin:0 auto}
+@media(max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px}
+.card h2{margin:0 0 10px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);font-weight:600}
+button,select,input[type=text]{font:inherit;color:var(--txt);background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:7px 13px}
+button{cursor:pointer;transition:.15s}
+button:hover{border-color:var(--lux)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--lux);outline-offset:2px}
+button.primary{background:linear-gradient(135deg,#ffe9b0,#ffb36b);color:#2a1604;border-color:transparent;font-weight:700}
+button.sel{border-color:var(--lux);background:rgba(255,217,138,.14)}
+button:disabled{opacity:.4;cursor:not-allowed}
+label.chk{display:flex;gap:8px;align-items:center;margin:6px 0}
+
+/* ---------- escenario: la lente ---------- */
+.stage{position:relative;background:#000;border-radius:30px;overflow:hidden;aspect-ratio:16/9;border:1px solid rgba(255,255,255,.1);box-shadow:0 0 60px rgba(255,170,90,.10),0 30px 80px rgba(0,0,0,.5)}
+.stage.fs{aspect-ratio:auto;border-radius:0;border:0;width:100vw;height:100vh}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hud{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;pointer-events:none;font-size:12px;letter-spacing:.08em;user-select:none}
+.hud>*{position:absolute}
+/* aura: el estado emocional se ve en el borde de la lente, sin tapar la cara */
+.aura{inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .8s;
+  box-shadow:inset 0 0 70px 6px var(--auraC),inset 0 0 200px 24px color-mix(in srgb,var(--auraC) 45%,transparent);animation:breathe 5s ease-in-out infinite}
+.aura.on{opacity:.55}
+@keyframes breathe{50%{filter:brightness(.55)}}
+.tl{top:20px;left:26px;display:flex;align-items:center;color:var(--mut);font-size:11px;text-transform:uppercase}
+.tl #hudStatus{display:none}
+.tr{z-index:10;top:14px;right:18px;display:flex;gap:10px;align-items:center;color:var(--mut);font-size:11px;text-align:right}
+.stage.fs .tr .tm,.tr .tm{display:none}
+.ico{pointer-events:auto;width:38px;height:38px;border-radius:50%;padding:0;display:grid;place-items:center;font-size:15px;background:rgba(8,6,14,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(8px)}
+.ico.hover{border-color:var(--lux);background:rgba(255,217,138,.22)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mut)}
+.dot.on{background:var(--ok);box-shadow:0 0 12px var(--ok);animation:pulse 1.8s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.stage.fs .chips{display:none!important}
+
+/* subtítulos y asistente */
+.caption{left:50%;bottom:104px;transform:translateX(-50%);width:min(74%,740px);text-align:center;padding:8px 18px;font-size:17px;line-height:1.4;letter-spacing:.01em;opacity:0;transition:opacity .3s;pointer-events:none;text-shadow:0 2px 14px #000,0 0 3px #000}
+.caption.show{opacity:1}
+.caption b{display:none}
+.hud.at-home .caption{bottom:178px}
+.orb{left:24px;bottom:22px;display:flex;align-items:center;gap:10px;z-index:4}
+.orb i{display:block;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ffd98a 45%,#ff9a4d);box-shadow:0 0 calc(8px + var(--lv,0)*30px) calc(var(--lv,0)*8px) rgba(255,190,110,.7);transition:box-shadow .25s}
+.orb[data-s=speaking] i{animation:talk .8s ease-in-out infinite}
+@keyframes talk{50%{transform:scale(1.3)}}
+.orb[data-s=muted] i{background:#4a4655;box-shadow:none}
+.orb[data-s=idle] i{opacity:.45}
+#orbTxt{font-size:10px;color:var(--mut);letter-spacing:.16em;text-transform:uppercase}
+.heard{left:24px;bottom:58px;color:var(--mut);font-size:11px;max-width:32%}
+
+/* botones del HUD (clicables con la mano) */
+.dock{left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:14px;white-space:nowrap;z-index:4}
+.hud-btn{pointer-events:auto;position:relative;min-height:46px;padding:8px 20px;font-size:13px;letter-spacing:.06em;border-radius:999px;
+  background:rgba(8,6,14,.6);border:1px solid rgba(255,255,255,.2);color:var(--txt);backdrop-filter:blur(10px);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.hud-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hud-btn.round{width:54px;height:54px;min-height:0;padding:0;font-size:12px;font-weight:600}
+.hud-btn.hover{border-color:var(--lux);background:rgba(255,217,138,.2);box-shadow:0 0 26px rgba(255,190,110,.5);transform:scale(1.06)}
+.hud-btn.pressed{transform:scale(.94);background:rgba(255,217,138,.4)}
+.hud-btn.prim{background:linear-gradient(135deg,#ffe9b0,#ffb36b);color:#2a1604;border-color:transparent;font-weight:700}
+.hud-btn.right{background:rgba(141,255,176,.3);border-color:var(--ok)}
+.hud-btn.wrong{background:rgba(255,90,122,.3);border-color:var(--fru)}
+.hud-btn.on{border-color:var(--lux);color:var(--lux);box-shadow:0 0 18px rgba(255,190,110,.4)}
+.hud-btn:disabled{opacity:.35}
+.hud-btn.big{min-height:120px;min-width:210px;padding:16px 28px;font-size:17px;border-radius:30px;flex-direction:column;letter-spacing:.06em;gap:10px}
+.hud-btn.big svg{width:46px;height:46px;stroke-width:1.5}
+
+/* overlays */
+.center{inset:0;display:none;place-items:center;text-align:center;padding:20px;background:radial-gradient(circle at 50% 45%,rgba(6,5,12,.7),rgba(6,5,12,.9));backdrop-filter:blur(8px);pointer-events:auto;z-index:5}
+.center.show{display:grid}
+.center.light{background:radial-gradient(circle at 50% 50%,rgba(6,5,12,.5),rgba(6,5,12,.78));backdrop-filter:blur(4px)}
+.center .box{max-width:620px;width:100%}
+.center h3{margin:0 0 14px;font-size:21px;letter-spacing:.2em;text-transform:uppercase;font-weight:300}
+.center h3.xl{font-size:30px;letter-spacing:.04em;text-transform:none}
+.center p{margin:0 0 12px;color:var(--mut);font-size:13px;letter-spacing:0}
+.center label{display:flex;gap:8px;align-items:flex-start;text-align:left;color:var(--txt);margin:0 0 10px;font-size:13px;letter-spacing:0}
+.center .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.center .bar{height:4px;background:rgba(255,255,255,.12);border-radius:3px;margin-top:12px;overflow:hidden}
+.center .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffe9b0,#ff9a4d)}
+.warn{color:var(--fat)!important}
+.intro-lens{width:72px;height:72px;margin:0 auto 18px}
+
+/* lectura */
+.test,.mathHud{inset:0;display:none}
+.test.show,.mathHud.show{display:block}
+.test>*,.mathHud>*{position:absolute}
+.prog{left:0;top:0;width:100%}
+.prog span{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:10px;color:var(--mut);letter-spacing:.3em}
+.prog .bar{height:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.prog .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffe9b0,#ff9a4d,#a78bff);box-shadow:0 0 12px rgba(255,170,90,.8);transition:width .3s}
+.chips{right:26px;bottom:96px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:10px;color:var(--mut);letter-spacing:.18em}
+.chips b{color:var(--txt);font-size:15px;font-weight:600;margin-left:6px}
+.bigread{left:50%;top:46%;transform:translate(-50%,-50%);width:min(86%,900px);padding:34px 40px;text-align:left;background:radial-gradient(ellipse at center,rgba(6,5,12,.78) 30%,rgba(6,5,12,0) 72%)}
+.bigread p{margin:0;font-size:clamp(20px,2.6vw,32px);line-height:1.65;letter-spacing:.01em;text-shadow:0 2px 16px rgba(0,0,0,.8)}
+.w{display:inline-block;padding:0 5px;margin:0 1px;border-radius:8px;color:#b9b2c4;border-bottom:2px solid transparent;transition:color .2s,background .2s}
+.w.cur{color:#fff;background:rgba(255,217,138,.14);border-bottom-color:var(--lux);box-shadow:0 0 22px rgba(255,190,110,.4)}
+.w.ok{color:var(--ok)}.w.retry{color:#d9ff8a}.w.err{color:var(--fru);text-decoration:underline wavy}.w.skip{color:#6f6a7c;text-decoration:line-through}
+.w.stuck{border-bottom-color:var(--fat)}
+.w .sy{color:#fff}.w .sy:nth-child(even){color:var(--fat)}
+/* matemáticas */
+.mathcard{left:50%;top:44%;transform:translate(-50%,-50%);width:min(76%,700px);text-align:center}
+.mathcard small{display:none}
+.mathcard .q{font:200 clamp(48px,8vw,84px) var(--f);letter-spacing:.1em;margin:0 0 22px;text-shadow:0 2px 20px #000}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.opts .hud-btn{font:300 clamp(22px,3.4vw,34px) var(--f);min-height:72px;border-radius:24px}
+/* resultado */
+.center .box.wide{max-width:800px}
+.center .box.wide h3{font-size:12px;margin-bottom:10px;color:var(--mut);letter-spacing:.3em}
+.rtop{display:flex;align-items:center;justify-content:center;gap:26px;margin-bottom:14px}
+.sring{--p:0;width:104px;height:104px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--lux) calc(var(--p)*1%),rgba(255,255,255,.1) 0);position:relative;flex:none}
+.sring::before{content:"";position:absolute;inset:6px;border-radius:50%;background:#0b0912}
+.sring b{position:relative;font:200 40px var(--f)}
+.rlabel{text-align:left}
+.rlabel p{margin:0;font-size:18px;color:var(--txt);letter-spacing:.02em}
+.res{display:flex;gap:16px;margin-top:8px;letter-spacing:0}
+.res div{text-align:left}
+.res small{display:block;color:var(--mut);font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+.res b{font:300 20px var(--f)}
+.rface{padding:2px 4px 6px;text-align:left}
+.ribbon{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:2px 0 6px}
+.ribbon i{flex:1;min-width:1px}
+.rleg{font-size:10.5px;color:var(--mut);letter-spacing:.06em;margin-bottom:12px}
+.rleg span{margin-right:12px;white-space:nowrap}
+.dials{display:flex;justify-content:space-between;gap:10px}
+.dial{--p:0;--c:var(--att);text-align:center;font-size:9.5px;color:var(--mut);letter-spacing:.14em;text-transform:uppercase}
+.dial i{width:56px;height:56px;margin:0 auto 5px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.1) 0);position:relative;font-style:normal;color:var(--txt);font:300 15px var(--f);letter-spacing:0;text-transform:none}
+.dial i::before{content:"";position:absolute;inset:4px;border-radius:50%;background:#0b0912}
+.dial i em{position:relative;font-style:normal}
+.diag{color:var(--txt)!important;font-size:12.5px!important;line-height:1.5;text-align:left;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:12px 0 4px!important}
+.recs{margin:0 0 12px;padding-left:18px;text-align:left;color:var(--mut);font-size:12px;letter-spacing:0}
+.recs li{margin:2px 0}
+/* cursor de la mano */
+.hand{position:absolute;left:0;top:0;width:0;height:0;display:none;z-index:60;pointer-events:none;transform-origin:0 0}
+.hand i{position:absolute;left:-24px;top:-24px;width:48px;height:48px;border-radius:50%;--p:0;background:conic-gradient(var(--lux) calc(var(--p)*1%),transparent 0);
+  -webkit-mask:radial-gradient(circle,transparent 18px,#000 19px,#000 23px,transparent 24px);mask:radial-gradient(circle,transparent 18px,#000 19px,#000 23px,transparent 24px)}
+.hand::before{content:"";position:absolute;left:-18px;top:-18px;width:36px;height:36px;border-radius:50%;border:2px solid var(--lux);box-shadow:0 0 16px var(--lux),inset 0 0 10px rgba(255,217,138,.4);transition:transform .08s,background .08s}
+.hand::after{content:"";position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff}
+.hand.pinch::before{transform:scale(.55);background:rgba(255,217,138,.55)}
+
+/* ---------- inicio: estado emocional ---------- */
+.home{inset:0;display:none}
+.home.show{display:block}
+.home>*{position:absolute}
+.hm-state{left:0;right:0;top:34px;text-align:center;font:200 32px var(--f);letter-spacing:.42em;text-transform:uppercase;color:var(--auraC);text-shadow:0 0 28px currentColor;padding-left:.42em}
+.faces{left:28px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px}
+.fc{--c:#968fa6;width:44px;height:44px;position:relative;color:rgba(255,255,255,.35);transition:.35s}
+.fc svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.fc.act{color:var(--c);transform:scale(1.32);filter:drop-shadow(0 0 10px var(--c))}
+.fc b{position:absolute;left:54px;top:50%;transform:translateY(-50%);font:300 14px var(--f);color:var(--c);opacity:0;transition:.3s}
+.fc.act b{opacity:1}
+.fils{right:30px;top:50%;transform:translateY(-50%);display:flex;gap:18px}
+.fl{--c:var(--att);display:flex;flex-direction:column;align-items:center;gap:8px;font-size:9px;color:var(--mut);letter-spacing:.14em}
+.fl i{display:flex;align-items:flex-end;width:7px;height:150px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+.fl u{display:block;width:100%;height:0;border-radius:4px;background:var(--c);box-shadow:0 0 14px var(--c);transition:height .25s;text-decoration:none}
+.hm-cta{left:50%;bottom:22px;transform:translateX(-50%);text-align:center;z-index:4}
+.hm-cta small{display:block;margin-top:2px;color:var(--mut);font-size:10px;letter-spacing:.34em;padding-left:.34em}
+.iris{width:132px;height:132px;min-height:0;padding:0;border-radius:50%;border:0;background:radial-gradient(circle,rgba(255,217,138,.16),rgba(8,6,14,.55) 70%);animation:irisb 3.4s ease-in-out infinite;color:var(--lux)}
+.iris svg{width:100%;height:100%;stroke-width:5}
+@keyframes irisb{50%{box-shadow:0 0 44px rgba(255,190,110,.45)}}
+.iris.hover{transform:scale(1.07)}
+.hud.in-act .tl{display:none}
+.strip{left:26px;top:20px;display:none;align-items:center;gap:9px;font-size:11px;letter-spacing:.24em;text-transform:uppercase}
+.strip.show{display:flex}
+.strip .sd{display:block;width:9px;height:9px;border-radius:50%;background:var(--auraC);box-shadow:0 0 14px var(--auraC)}
+.strip b{font-weight:400;color:var(--auraC)}
+
+/* ---------- panel ---------- */
+aside{display:flex;flex-direction:column;gap:14px;min-width:0}
+.metric{display:grid;grid-template-columns:104px 1fr 44px;gap:8px;align-items:center;margin:8px 0}
+.metric .track{height:6px;background:rgba(255,255,255,.09);border-radius:4px;overflow:hidden}
+.metric .track i{display:block;height:100%;width:0;border-radius:4px;transition:width .2s}
+.metric b{text-align:right;font:500 13px var(--f)}
+.mood{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.mood strong{font-size:26px;font-weight:300;letter-spacing:.08em;text-transform:uppercase}
+.mood small{color:var(--mut)}
+.chart-wrap canvas{width:100%;height:150px;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;color:var(--mut);font-size:12px}
+.legend i{display:inline-block;width:18px;height:0;border-top:3px solid;vertical-align:middle;margin-right:5px}
+.log{list-style:none;margin:0;padding:0;max-height:210px;overflow:auto;font-size:13px}
+.log li{padding:6px 0;border-bottom:1px solid var(--line)}
+.log li small{color:var(--mut);margin-right:6px}
+.log:empty::after{content:"—";color:var(--mut)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stats div{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:14px;padding:8px 12px}
+.stats small{display:block;color:var(--mut);font-size:11px}
+.stats b{font:300 20px var(--f)}
+.note{color:var(--mut);font-size:12px;margin:8px 0 0}
+.note.bad{color:var(--fru)}.note.ok{color:var(--ok)}
+.meter{height:6px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;margin-top:10px}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok),var(--lux))}
+.diff{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.diff span{background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.4);color:var(--fat);border-radius:20px;padding:1px 10px;font-size:12px}
+details{color:var(--mut);font-size:12px}
+details summary{cursor:pointer;color:var(--txt)}
+</style>
+</head>
+<body>
+<header>
+  <span class="lens"></span><h1>LUMEN</h1>
+</header>
+
+<main>
+<section>
+  <div class="stage" id="stage">
+    <canvas id="cv" width="1280" height="720"></canvas>
+    <video id="video" playsinline muted style="display:none"></video>
+
+    <div class="hud" id="hud">
+      <div class="aura" id="aura"></div>
+      <div class="tl"><span class="dot" id="dot"></span><span id="hudStatus"></span></div>
+      <div class="tr">
+        <span class="tm"><span id="hudTime">00:00</span> · <span id="hudFps">— fps</span></span>
+        <button class="ico hud-btn" data-act="sound" id="btnSound" title="Voz del asistente">🔊</button>
+        <button class="ico" id="btnFs" title="Pantalla completa (tecla F)">⛶</button>
+        <button class="ico hud-btn" data-act="stop" title="Terminar la sesión">⏻</button>
+      </div>
+      <div id="gauges" style="display:none">
+        <div class="ring" id="r-att"><b>0</b></div><div class="ring" id="r-fat"><b>0</b></div><div class="ring" id="r-fru"><b>0</b></div><div class="ring" id="r-con"><b>0</b></div>
+      </div>
+
+      <!-- lectura -->
+      <div class="test" id="testHud">
+        <div class="prog"><span id="progTxt"></span><div class="bar"><i id="progBar"></i></div></div>
+        <div class="chips">
+          <span>RITMO<b id="c-wpm">—</b></span>
+          <span>PRECISIÓN<b id="c-acc">—</b></span>
+          <span>TRABADAS<b id="c-stk">0</b></span>
+        </div>
+        <div class="bigread"><p id="bigText"></p></div>
+      </div>
+
+      <!-- matemáticas -->
+      <div class="mathHud" id="mathHud">
+        <div class="prog"><span id="mProg"></span><div class="bar"><i id="mBar"></i></div></div>
+        <div class="mathcard">
+          <div class="q" id="mQ">—</div>
+          <div class="opts" id="mOpts"></div>
+        </div>
+      </div>
+
+      <!-- inicio: la cámara muestra cómo estás -->
+      <div class="home" id="home">
+        <div class="hm-state" id="hmState">—</div>
+        <div class="faces" id="faces"></div>
+        <div class="fils" id="fils"></div>
+        <div class="hm-cta">
+          <button class="hud-btn iris" data-act="start" aria-label="Iniciar actividad" title="Iniciar actividad" id="iris"></button>
+          <small>INICIAR</small>
+        </div>
+      </div>
+      <div class="strip" id="strip"><i class="sd"></i><b id="stState">—</b></div>
+
+      <div class="heard" id="heard"></div>
+      <div class="orb" id="orb" data-s="idle"><i></i><span id="orbTxt"></span></div>
+      <div class="caption" id="caption"></div>
+      <div class="dock" id="dock"></div>
+
+      <!-- menú del asistente -->
+      <div class="center light" id="menu">
+        <div class="box">
+          <h3 class="xl">¿Hoy qué querés practicar?</h3>
+          <div class="row" style="margin-top:22px">
+            <button class="hud-btn big" data-act="menu-math"><svg viewBox="0 0 48 48"><text x="24" y="31" text-anchor="middle" font-size="22" font-weight="300" fill="currentColor" stroke="none" font-family="inherit">123</text><circle cx="24" cy="24" r="20"/></svg>Números</button>
+            <button class="hud-btn big" data-act="menu-read"><svg viewBox="0 0 48 48"><path d="M5 11c7-3 13-1 19 3 6-4 12-6 19-3v26c-7-3-13-1-19 3-6-4-12-6-19-3z"/><path d="M24 14v26"/></svg>Lectura</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="center show" id="intro">
+        <div class="box">
+          <div class="lens intro-lens"></div>
+          <h3>Ponete los lentes</h3>
+          <label><input type="checkbox" id="consent"> <span>Acepto usar la cámara y el micrófono en este navegador. No se graba nada.</span></label>
+          <label><input type="checkbox" id="chkFs" checked> <span>Pantalla completa</span></label>
+          <div class="row">
+            <button class="primary" id="btnCam" type="button" disabled>Con cámara</button>
+            <button id="btnDemo" type="button">Demo</button>
+          </div>
+          <p id="introMsg"></p>
+          <p class="warn" id="fileWarn" style="display:none">⚠ Abriste el archivo directo (file://) y Chrome bloquea el micrófono. Usá <b>abrir-lumen.bat</b> o GitHub Pages.</p>
+        </div>
+      </div>
+
+      <div class="center" id="calib">
+        <div class="box"><h3>Mirá al frente</h3>
+          <div class="bar"><i id="calibBar"></i></div></div>
+      </div>
+
+      <div class="center" id="result">
+        <div class="box wide">
+          <h3 id="resTitle">Resultado</h3>
+          <div class="rtop">
+            <div class="sring" id="sring"><b id="resScore">0</b></div>
+            <div class="rlabel"><p id="resLabel"></p><div class="res" id="resChips"></div></div>
+          </div>
+          <div class="rface">
+            <div class="ribbon" id="resRibbon"></div>
+            <div class="rleg" id="resLeg"></div>
+            <div class="dials" id="resBars"></div>
+          </div>
+          <p class="diag" id="resText"></p>
+          <ul class="recs" id="resRecs"></ul>
+          <div class="row">
+            <button class="hud-btn prim" data-act="again">Repetir</button>
+            <button class="hud-btn" data-act="menu">Cambiar</button>
+            <button class="hud-btn" data-act="finish">Inicio</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hand" id="hand"><i id="handRing"></i></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Controles de la sesión</h2>
+    <div class="row">
+      <button id="btnMenu" type="button" disabled>Volver al menú del asistente</button>
+      <button id="btnRecal" type="button" disabled>Recalibrar</button>
+      <button id="btnStop" type="button" disabled>Terminar sesión</button>
+      <button id="btnCsv" type="button" disabled>Exportar sesión (CSV)</button>
+      <button id="btnCsvRd" type="button" disabled>Exportar práctica (CSV)</button>
+    </div>
+    
+  </div>
+
+  <div class="card" id="demoPanel" style="margin-top:16px;display:none">
+    <h2>Modo demo · simular estado del usuario</h2>
+    <div class="row" id="presets"></div>
+    
+  </div>
+</section>
+
+<aside>
+  <div class="card">
+    <h2>Estado en tiempo real</h2>
+    <div class="mood"><strong id="mood">—</strong><small>emoción dominante</small></div>
+    <div class="metric"><span>Atención</span><div class="track"><i id="m-att" style="background:var(--att)"></i></div><b id="v-att">—</b></div>
+    <div class="metric"><span>Fatiga / estrés</span><div class="track"><i id="m-fat" style="background:var(--fat)"></i></div><b id="v-fat">—</b></div>
+    <div class="metric"><span>Frustración</span><div class="track"><i id="m-fru" style="background:var(--fru)"></i></div><b id="v-fru">—</b></div>
+    <div class="metric"><span>Confusión</span><div class="track"><i id="m-con" style="background:var(--con)"></i></div><b id="v-con">—</b></div>
+  </div>
+
+  <div class="card">
+    <h2>Micrófono</h2>
+    <div class="row">
+      <button id="btnMicTest" type="button">Probar micrófono</button>
+      <button id="btnMicReset" type="button">Reintentar</button>
+    </div>
+    <div class="meter"><i id="micBar"></i></div>
+    <p class="note" id="micMsg">Sin probar.</p>
+    <label class="chk"><input type="checkbox" id="chkBarge"> <span class="note" style="margin:0">Escuchar mientras la asistente habla (solo con auriculares)</span></label>
+    <select id="selLang" hidden><option value="es-AR">Español (Argentina)</option></select>
+    <pre class="note" id="micDiag" style="white-space:pre-wrap;font:11px var(--mono);margin:8px 0 0">—</pre>
+    <p class="note warn" id="fileWarn2" style="display:none">⚠ Estás en file://: Chrome bloquea el reconocimiento de voz. Usá <b>abrir-lumen.bat</b> o GitHub Pages.</p>
+  </div>
+
+  <div class="card">
+    <h2>Práctica</h2>
+    <div class="row">
+      <select id="selLevel" aria-label="Nivel"><option value="1">Nivel 1</option><option value="2">Nivel 2</option><option value="3">Nivel 3</option></select>
+      <select id="selSrc" aria-label="Registro de la lectura">
+        <option value="voice">Lectura: por voz</option><option value="manual">Lectura: moderador</option><option value="sim">Lectura: lector simulado</option>
+      </select>
+    </div>
+    <div class="stats" style="margin-top:10px">
+      <div><small>Actividad</small><b id="p-state" style="font-size:14px">En espera</b></div>
+      <div><small>Avance</small><b id="p-word">—</b></div>
+      <div><small>Precisión</small><b id="p-acc">—</b></div>
+      <div><small>Ritmo (ppm)</small><b id="p-wpm">—</b></div>
+      <div><small>Trabadas</small><b id="p-stk">0</b></div>
+      <div><small>Pausas &gt; 2 s</small><b id="p-pau">0</b></div>
+    </div>
+    <div class="diff" id="p-diff"></div>
+    <p class="note" id="p-note">Moderador (lectura): <b>Espacio</b> = bien, <b>X</b> = error, <b>S</b> = se trabó.</p>
+  </div>
+
+  <div class="card chart-wrap">
+    <h2>Últimos 2 minutos</h2>
+    <canvas id="chart"></canvas>
+    <div class="legend">
+      <span><i style="border-color:var(--att)"></i>Atención</span>
+      <span><i style="border-color:var(--fat);border-top-style:dashed"></i>Fatiga</span>
+      <span><i style="border-color:var(--fru);border-top-style:dotted"></i>Frustración</span>
+      <span><i style="border-color:var(--con);border-top-style:double"></i>Confusión</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Diagnósticos y recomendaciones</h2>
+    <ul class="log" id="log"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Resumen de la sesión</h2>
+    <div class="stats">
+      <div><small>Atención promedio</small><b id="s-att">—</b></div>
+      <div><small>Tiempo concentrado</small><b id="s-foc">—</b></div>
+      <div><small>Tiempo con fatiga alta</small><b id="s-fat">—</b></div>
+      <div><small>Recomendaciones</small><b id="s-rec">0</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Ajustes</h2>
+    <label class="chk"><input type="checkbox" id="optHands" checked> Control con manos (cursor + pellizco)</label>
+    <label class="chk"><input type="checkbox" id="optDwell" checked> Clic por permanencia (1 s sobre un botón)</label>
+  </div>
+
+  <div class="card">
+    <h2>Registro para test de usabilidad</h2>
+    <div class="row">
+      <input type="text" id="pid" placeholder="ID participante (ej. P01)" maxlength="20" style="width:170px">
+      <select id="task" aria-label="Tarea actual">
+        <option value="">Sin tarea</option>
+        <option>T1 · Colocarse y calibrar</option>
+        <option>T2 · Elegir actividad por voz</option>
+        <option>T3 · Usar el cursor con la mano</option>
+        <option>T4 · Práctica de lectura</option>
+        <option>T5 · Práctica de matemáticas</option>
+        <option>T6 · Interpretar un diagnóstico</option>
+      </select>
+    </div>
+    
+  </div>
+
+  <details class="card">
+    <summary>Cómo se calcula</summary>
+    <p><b>Atención:</b> giro de cabeza, mirada y ojos cerrados. <b>Fatiga/estrés:</b> PERCLOS 30 s, bostezos, cabeza caída, tensión. <b>Frustración:</b> ceño, labios apretados, ojos entrecerrados. <b>Confusión:</b> cejas internas arriba, asimetría, cabeza ladeada. Todo contra tu calibración neutra.<br>
+    <b>Lectura:</b> cada palabra dicha se compara con la esperada. <i>Pausa</i> = más de 2 s sin avanzar; <i>traba</i> = más de 4,5 s o 3 intentos fallidos. Fluidez = 50 % precisión + 30 % ritmo + 20 % ausencia de trabas.<br>
+    <b>Matemáticas:</b> se mide acierto a la primera, tiempo de respuesta y trabas (más de 9 s). El nivel se adapta.</p>
+  </details>
+</aside>
+</main>
+
+<script type="module">
+/* ================= utilidades ================= */
+const $ = s => document.querySelector(s);
+const clamp = (x,a=0,b=1) => Math.max(a, Math.min(b, x));
+const avg = (...a) => a.length ? a.reduce((s,x)=>s+x,0)/a.length : 0;
+const pct = v => Math.round(v*100);
+const fmtT = s => String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
+const cv = $('#cv'), ctx = cv.getContext('2d'), video = $('#video'), stage = $('#stage'), hud = $('#hud');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const pickOne = arr => arr[Math.floor(Math.random()*arr.length)];
+const listJoin = a => a.length<2 ? a.join('') : a.slice(0,-1).join(', ') + ' y ' + a[a.length-1];
+const isFile = location.protocol === 'file:';
+if (isFile){ $('#fileWarn').style.display = 'block'; $('#fileWarn2').style.display = 'block'; }
+
+/* ================= texto en español ================= */
+const isV = c => 'aeiouáéíóúü'.includes(c);
+const STRONG = 'aeoáéó', ACCW = 'íú';
+const hiatus = (a,b) => (STRONG.includes(a) && STRONG.includes(b)) || (STRONG.includes(a) && ACCW.includes(b)) || (ACCW.includes(a) && STRONG.includes(b));
+const INSEP = new Set(['pr','pl','br','bl','fr','fl','gr','gl','cr','cl','tr','dr','kr','kl']);
+function syllabify(word){
+  const m = word.match(/^([^A-Za-zÁÉÍÓÚáéíóúñÑüÜ]*)(.*?)([^A-Za-zÁÉÍÓÚáéíóúñÑüÜ]*)$/);
+  const pre = m[1], core = m[2], post = m[3];
+  if (!core) return [word];
+  const lw = [...core.toLowerCase()], n = lw.length;
+  const vow = lw.map((c,i) => isV(c) || (c==='y' && i===n-1));
+  for (let i=1;i<n-1;i++) if (lw[i]==='u' && (lw[i-1]==='q'||lw[i-1]==='g') && 'eiéí'.includes(lw[i+1])) vow[i] = false;
+  const nuc = []; let i = 0;
+  while (i<n){ if (vow[i]){ let j=i+1; while (j<n && vow[j] && !hiatus(lw[j-1],lw[j])) j++; nuc.push([i,j-1]); i=j; } else i++; }
+  if (nuc.length < 2) return [pre+core+post];
+  const cuts = [];
+  for (let k=0;k<nuc.length-1;k++){
+    const a = nuc[k][1]+1, b = nuc[k+1][0], units = [];
+    for (let p=a;p<b;p++){ const two = lw[p]+(lw[p+1]||''); if (p+1<b && ['ch','ll','rr'].includes(two)){ units.push([p,p+2]); p++; } else units.push([p,p+1]); }
+    const u = units.length; let cut;
+    if (u===0) cut = b; else if (u===1) cut = units[0][0];
+    else if (u===2) cut = INSEP.has(lw.slice(units[0][0],units[1][1]).join('')) ? units[0][0] : units[1][0];
+    else if (u===3) cut = INSEP.has(lw.slice(units[1][0],units[2][1]).join('')) ? units[1][0] : units[2][0];
+    else cut = units[2][0];
+    cuts.push(cut);
+  }
+  const chars = [...core], out = []; let s = 0;
+  for (const c of cuts){ out.push(chars.slice(s,c).join('')); s = c; }
+  out.push(chars.slice(s).join(''));
+  out[0] = pre + out[0]; out[out.length-1] += post;
+  return out;
+}
+const norm = w => w.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+const norm2 = t => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+function lev(a,b){
+  const d = Array.from({length:a.length+1},(_,i)=>[i]); for (let j=1;j<=b.length;j++) d[0][j]=j;
+  for (let i=1;i<=a.length;i++) for (let j=1;j<=b.length;j++) d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+/* fonética en español rioplatense: v=b, z/c(e,i)=s, h muda, ll=y, qu/c=k, g(e,i)=j */
+const phon = w => w.replace(/qu/g,'k').replace(/c(?=[ei])/g,'s').replace(/z/g,'s').replace(/c/g,'k').replace(/v/g,'b').replace(/^h/,'').replace(/h/g,'').replace(/ll/g,'y').replace(/g(?=[ei])/g,'j').replace(/w/g,'u').replace(/(.)\1+/g,'$1');
+function closeEnough(h,e,strict){
+  if (!h || !e) return false; if (h===e) return true;
+  const ph = phon(h), pe = phon(e); if (ph===pe) return true;
+  if (strict || e.length<=2 || h.length<=1) return false;
+  const d = Math.min(lev(h,e), lev(ph,pe)); return d <= (e.length<=3 ? 1 : e.length<=6 ? 1 : e.length<=9 ? 2 : 3);
+}
+const nearMiss = (h,e) => e.length>2 && lev(phon(h),phon(e)) <= Math.ceil(e.length*.6);
+const NUMW = {cero:0,un:1,uno:1,una:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiuno:21,veintiun:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,cien:100,ciento:100,doscientos:200,trescientos:300,cuatrocientos:400,quinientos:500,seiscientos:600,setecientos:700,ochocientos:800,novecientos:900};
+function parseNums(text){
+  const toks = norm2(text).split(' ').filter(Boolean), out = []; let cur = null;
+  const flush = () => { if (cur !== null) out.push(cur); cur = null; };
+  for (const t of toks){
+    if (/^\d+$/.test(t)){ flush(); out.push(+t); }
+    else if (t in NUMW){
+      const v = NUMW[t];
+      if (cur === null) cur = v;
+      else if (cur>=100 && cur%100===0 && v<100) cur += v;
+      else if (v<10 && cur%10===0 && cur>=20 && cur<100) cur += v;
+      else { flush(); cur = v; }
+    } else if (t === 'y' && cur !== null){ /* continúa */ }
+    else flush();
+  }
+  flush(); return out;
+}
+
+/* números con tolerancia: el reconocedor suele escribir "sais", "dies", "tras", "cuarento"... */
+const NUMKEYS = Object.keys(NUMW);
+function fuzzyNumWord(t){
+  if (t in NUMW) return t;
+  const pt = phon(t); let best = null, bd = 9;
+  for (const k of NUMKEYS){
+    if (phon(k)===pt) return k;
+    if (k[0]!==t[0] && phon(k)[0]!==pt[0]) continue;
+    if (Math.abs(k.length - t.length) > 1 || k.length < 3) continue;
+    const d = lev(pt, phon(k)); if (d < bd){ bd = d; best = k; }
+  }
+  return best && bd <= (best.length >= 6 ? 2 : 1) ? best : null;
+}
+function parseNumsFuzzy(text){
+  const toks = norm2(text).split(' ').filter(Boolean).map(t => /^\d+$/.test(t) ? t : (fuzzyNumWord(t) || t));
+  return parseNums(toks.join(' '));
+}
+/* ¿alguna de las transcripciones (o sus alternativas) contiene la respuesta, aun mal escrita? */
+function hasAnswer(texts, ans){ return texts.some(t => parseNumsFuzzy(t).includes(ans)); }
+
+const LEVELS = {
+  1:{name:'Nivel 1', target:45, stuckMs:4500, text:'El sol sale por la mañana y las aves cantan en el árbol. Ana lee un libro nuevo en la plaza.'},
+  2:{name:'Nivel 2', target:55, stuckMs:4500, text:'La maestra trae una caja con letras de colores. Los chicos arman palabras y las leen juntos.'},
+  3:{name:'Nivel 3', target:65, stuckMs:4500, text:'Cuando llueve, el patio de la escuela se llena de charcos. Mateo salta con sus botas y su hermana cuenta las gotas.'}
+};
+const FILLERS = new Set(['eh','ehh','em','mm','mmm','este','ah','uh','eeh','ehm']);
+
+/* ================= estado ================= */
+const S = {
+  mode:null, running:false, landmarker:null, handLm:null, stream:null,
+  t0:0, lastVT:-1, noFaceSince:null, lastRes:null, lastHand:null,
+  base:{}, calib:null, m:{att:1,fat:0,fru:0,con:0}, emo:{}, mood:'Neutral',
+  perclos:[], yawns:[], yawStart:null, yawCounted:false,
+  rows:[], items:[], lastSample:0, recs:[], lastRecText:'', lastEvent:'',
+  since:{}, lastFired:{}, frames:0, fpsT:performance.now(), fps:60, lastUI:0, handEvery:1, handsOn:true, frameN:0, sound:true, menuShown:false
+};
+const A = {screen:'none', flow:0, cmdDone:false, last:'read', menuTimer:null, orb:'idle'};
+const ACT = {on:false, kind:null, face:[]};
+let helpSyl = false;
+
+/* ================= sonido: tonos y voz del asistente ================= */
+let AC = null;
+function tone(kind){
+  if (!S.sound) return;
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state==='suspended') AC.resume();
+    const seqs = {open:[[523,.09],[784,.14]], start:[[660,.08],[880,.12]], ok:[[660,.08],[990,.16]], err:[[240,.18]], ping:[[880,.07]], done:[[523,.1],[659,.1],[784,.18]]};
+    let t = AC.currentTime;
+    for (const [f,d] of seqs[kind]){
+      const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.11,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(g).connect(AC.destination); o.start(t); o.stop(t+d+.02); t += d*.9;
+    }
+  }catch(_){}
+}
+let voicePick = null;
+function pickVoice(){
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices().filter(v => /^es/i.test(v.lang)); if (!vs.length) return;
+  const score = v => (/es[-_]AR/i.test(v.lang)?40:/es[-_](MX|US|419)/i.test(v.lang)?25:10) + (/Google|Natural|Online/i.test(v.name)?15:0) + (/Elena|Dalia|Sabina|Helena|Paulina|Laura|Sofia|Salome/i.test(v.name)?5:0);
+  voicePick = vs.sort((a,b) => score(b)-score(a))[0];
+}
+if ('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+let sayTok = 0, capTimer = null;
+function setCaption(text, tag='', hold=0){
+  const c = $('#caption'); c.innerHTML = (tag ? `<b>${esc(tag)}</b>` : '') + esc(text); c.classList.add('show');
+  clearTimeout(capTimer); if (hold) capTimer = setTimeout(() => c.classList.remove('show'), hold);
+}
+function hideCaption(d=4500){ clearTimeout(capTimer); capTimer = setTimeout(() => $('#caption').classList.remove('show'), d); }
+function setOrb(s){ A.orb = s; $('#orb').dataset.s = s; $('#orbTxt').textContent = {idle:'',speaking:'Hablando',listening:'Te escucho',muted:'Sin micrófono'}[s] || ''; }
+function say(text, {tag='', caption=true}={}){
+  return new Promise(res => {
+    const tok = ++sayTok;
+    if (caption) setCaption(text, tag);
+    const finish = () => { if (tok === sayTok){ setOrb(MIC.want && !MIC.fatal ? 'listening' : (MIC.fatal ? 'muted' : 'idle')); if (caption) hideCaption(); resumeListen(); } res(); };
+    if (!S.sound || !('speechSynthesis' in window)){ setTimeout(finish, Math.min(7000, 800 + text.length*50)); return; }
+    if (MIC.echoGuard()) pauseListen(); setOrb('speaking');
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/·/g, ', ')); u.lang = voicePick ? voicePick.lang : 'es-AR'; if (voicePick) u.voice = voicePick; u.rate = 1;
+    let done = false; const fin = () => { if (done) return; done = true; clearTimeout(tm); finish(); };
+    u.onend = fin; u.onerror = fin;
+    const tm = setTimeout(fin, 2500 + text.length*95);
+    setTimeout(() => { if (tok === sayTok) speechSynthesis.speak(u); else fin(); }, 60);
+  });
+}
+async function sayLong(text, opts, guard=()=>true){
+  const parts = text.match(/[^.!?]+[.!?]?/g) || [text];
+  for (const p of parts){ if (!guard()) return; const t = p.trim(); if (t) await say(t, opts); }
+}
+function cancelSpeech(){ sayTok++; if ('speechSynthesis' in window) speechSynthesis.cancel(); setOrb(MIC.want && !MIC.fatal ? 'listening':'idle'); }
+
+/* ================= micrófono ================= */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const MIC = {echoGuard:() => !($('#chkBarge') && $('#chkBarge').checked), skip:0, lastLen:0, lastIdx:-1, swapIdx:-1, rec:null, want:false, paused:false, mode:null, handler:null, fatal:null, quick:0, startedAt:0, session:0, streamErr:null, ev:{}, evLast:'', lastText:''};
+const micErrText = k => ({
+  unsupported:'Este navegador no incluye reconocimiento de voz. Usá Chrome o Edge.',
+  insecure:'Chrome bloquea el micrófono en archivos locales (file://). Abrí Lumen con abrir-lumen.bat (localhost) o desde GitHub Pages.',
+  denied:'Sin permiso de micrófono. Tocá el candado de la barra de direcciones y permitilo.',
+  nomic:'No encuentro un micrófono conectado.',
+  network:'El reconocimiento de voz necesita conexión a internet.',
+  loop:'El reconocimiento de voz se cortó varias veces seguidas.',
+  deaf:'El reconocedor de voz del navegador escucha pero no devuelve texto. Revisá en Windows: Configuración > Privacidad > Voz > "Reconocimiento de voz en línea", y que no haya VPN/firewall bloqueándolo. Mientras tanto usá el modo manual o simulado.',
+  noengine:'Este navegador no trae el motor de reconocimiento de voz (pasa en el navegador integrado de la app de escritorio). Abrí http://localhost:8000 en Chrome o Edge.'
+}[k] || ('Error de micrófono: ' + k));
+function renderMicDiag(){
+  const e = MIC.ev, f = k => e[k] ? '✓' : '—';
+  $('#micDiag').textContent = `inició ${f('start')} · audio ${f('audiostart')} · sonido ${f('soundstart')} · voz ${f('speechstart')} · texto ${f('result')}` + (MIC.evLast ? `\núltimo evento: ${MIC.evLast}` : '') + (MIC.lastText ? `\noído: “${MIC.lastText}”` : '');
+}
+function micEv(name, extra=''){ MIC.ev[name] = performance.now(); MIC.evLast = name + (extra ? ' (' + extra + ')' : ''); renderMicDiag(); }
+function orbLevel(v){ const o = $('#orb'); o.style.setProperty('--lv', v); clearTimeout(orbLevel.t); orbLevel.t = setTimeout(() => o.style.setProperty('--lv', 0), 450); }
+function micFatal(kind){
+  if (MIC.fatal) return;
+  MIC.fatal = kind; MIC.want = false; killRec(); setOrb('muted');
+  const t = micErrText(kind); const m = $('#micMsg'); m.textContent = t; m.className = 'note bad';
+  logRec('Micrófono','--fru', t);
+  setCaption(t + ' Podés seguir tocando las opciones.', 'Micrófono', 10000);
+  if (RD.active && RD.src === 'voice'){ RD.src = 'manual'; setDock('test'); }
+}
+/* Pide permiso (y opcionalmente mide el nivel) y SUELTA el micrófono enseguida:
+   mantenerlo abierto junto al reconocimiento de voz puede dejar sordo al reconocedor en algunos equipos. */
+async function probeMic(ms=0){
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ MIC.streamErr = e; return {ok:false, err:e}; }
+  const label = (stream.getAudioTracks()[0] || {}).label || 'micrófono'; let peak = 0;
+  if (ms > 0){
+    const ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.resume) await ac.resume();
+    const an = ac.createAnalyser(); an.fftSize = 512; ac.createMediaStreamSource(stream).connect(an); const buf = new Uint8Array(an.fftSize), t0 = performance.now();
+    await new Promise(res => { const tick = () => {
+      an.getByteTimeDomainData(buf); let sum = 0; for (const v of buf){ const x = (v-128)/128; sum += x*x; }
+      const lv = clamp(Math.sqrt(sum/buf.length)*6); peak = Math.max(peak, lv); $('#micBar').style.width = pct(lv)+'%';
+      if (performance.now()-t0 < ms) requestAnimationFrame(tick); else res(); }; tick(); });
+    ac.close();
+  }
+  stream.getTracks().forEach(t => t.stop()); $('#micBar').style.width = '0%';
+  return {ok:true, peak, label};
+}
+function killRec(){ clearTimeout(MIC.deafT); const r = MIC.rec; MIC.rec = null; if (r){ r.onend = r.onresult = r.onerror = null; try{ r.abort(); }catch(_){} } }
+function startRec(){
+  if (MIC.rec || MIC.fatal || MIC.paused || !MIC.want) return;
+  if (!SR){ micFatal('unsupported'); return; }
+  const r = new SR(); r.lang = $('#selLang').value; r.continuous = true; r.interimResults = true; r.maxAlternatives = 3;
+  MIC.rec = r; const sess = ++MIC.session; const t0 = performance.now();
+  r.onstart = () => { MIC.skip = 0; MIC.lastLen = 0; MIC.swapIdx = -1; MIC.startedAt = performance.now(); micEv('start'); if (!MIC.paused) setOrb('listening'); };
+  r.onaudiostart = () => micEv('audiostart');
+  r.onsoundstart = () => { micEv('soundstart'); orbLevel(.5); };
+  r.onspeechstart = () => { micEv('speechstart'); orbLevel(1); if (!MIC.heardAt) MIC.heardAt = performance.now(); clearTimeout(MIC.deafT);
+    MIC.deafT = setTimeout(() => { if (MIC.rec !== r || MIC.fatal) return;
+      MIC.deafN = (MIC.deafN||0) + 1;
+      if (MIC.deafN > 2){ micFatal('deaf'); return; }
+      $('#micMsg').className = 'note bad'; $('#micMsg').textContent = 'Llega voz pero no texto; reinicio el reconocedor…';
+      killRec(); MIC.ev = {}; MIC.heardAt = 0; setTimeout(startRec, 200); }, 7000); };
+  r.onnomatch = () => micEv('nomatch');
+  r.onresult = e => {
+    MIC.quick = 0; MIC.deafN = 0; MIC.heardAt = 0; clearTimeout(MIC.deafT); const full = [];
+    for (let i=0;i<e.results.length;i++) full.push(...e.results[i][0].transcript.trim().split(/\s+/).map(norm).filter(Boolean));
+    const last = e.results[e.results.length-1], idx = e.results.length-1; MIC.lastText = last[0].transcript; micEv('result'); orbLevel(.8);
+    MIC.lastLen = full.length; MIC.lastIdx = idx; if (MIC.skip > full.length) MIC.skip = 0;
+    if (idx <= MIC.swapIdx) return;   /* resto del enunciado anterior al cambio de actividad */
+    const all = full.slice(MIC.skip);
+    MIC.handler && MIC.handler({all, latest:last[0].transcript, alts:[...last].map(a => a.transcript), final:last.isFinal, idx, session:sess});
+  };
+  r.onerror = e => {
+    const k = e.error; micEv('error', k); if (k==='no-speech' || k==='aborted') return;
+    if (k==='not-allowed' || k==='service-not-allowed') micFatal(isFile ? 'insecure' : 'denied');
+    else if (k==='audio-capture') micFatal('nomic'); else if (k==='network') micFatal('network');
+  };
+  r.onend = () => {
+    if (MIC.rec === r) MIC.rec = null;
+    if (!MIC.ev.start && performance.now() - t0 < 3000){ MIC.dead = (MIC.dead||0) + 1; if (MIC.dead >= 2){ micFatal('noengine'); return; } } else MIC.dead = 0;
+    if (MIC.want && !MIC.paused && !MIC.fatal){
+      MIC.quick = (performance.now() - MIC.startedAt < 700) ? MIC.quick+1 : 0;
+      if (MIC.quick >= 5){ micFatal('loop'); return; }
+      setTimeout(startRec, MIC.quick ? 350 : 40);
+    }
+  };
+  try{ r.start(); }catch(_){ MIC.rec = null; }
+}
+function listen(mode, handler){
+  const warm = MIC.want && MIC.rec && !MIC.fatal;
+  MIC.want = true; MIC.mode = mode; MIC.handler = handler; MIC.lastText = '';
+  if (warm){ MIC.skip = MIC.lastLen; MIC.swapIdx = MIC.lastIdx; }   /* ya está escuchando: solo cambia el destino, sin demora */
+  else { MIC.ev = {}; MIC.skip = 0; MIC.swapIdx = -1; renderMicDiag(); if (!MIC.paused) startRec(); }
+  if (MIC.fatal) setOrb('muted'); return !MIC.fatal;
+}
+function stopListen(){ MIC.want = false; MIC.mode = null; MIC.handler = null; killRec(); if (A.orb==='listening') setOrb('idle'); }
+function pauseListen(){ MIC.paused = true; killRec(); }
+function resumeListen(){ MIC.paused = false; if (MIC.want) startRec(); }
+async function runMicTest(){
+  const m = $('#micMsg'); m.className = 'note'; m.textContent = 'Paso 1/2: permiso y nivel. Hablá ahora…';
+  pauseListen();   /* un solo reconocedor a la vez */
+  const p = await probeMic(3000);
+  if (!p.ok){ resumeListen(); m.className = 'note bad'; m.textContent = MIC.streamErr && MIC.streamErr.name==='NotFoundError' ? micErrText('nomic') : (isFile ? micErrText('insecure') : micErrText('denied')); return; }
+  if (p.peak < .05){ resumeListen(); m.className = 'note bad'; m.textContent = `Paso 1: el micrófono “${p.label}” casi no capta sonido (nivel ${pct(p.peak)} %). Revisá el micrófono predeterminado de Windows y el volumen.`; return; }
+  if (!SR){ resumeListen(); m.className = 'note bad'; m.textContent = micErrText('unsupported'); return; }
+  m.textContent = `Paso 1 ok (“${p.label}”). Paso 2/2: reconocimiento. Decí “hola, probando uno, dos, tres”…`;
+  MIC.ev = {}; MIC.lastText = ''; MIC.evLast = ''; renderMicDiag();
+  const r = new SR(); r.lang = $('#selLang').value; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  let got = false, bad = false;
+  r.onstart = () => micEv('start'); r.onaudiostart = () => micEv('audiostart'); r.onsoundstart = () => micEv('soundstart'); r.onspeechstart = () => micEv('speechstart'); r.onnomatch = () => micEv('nomatch');
+  r.onresult = e => { got = true; const t = e.results[e.results.length-1][0].transcript; MIC.lastText = t; micEv('result'); m.className = 'note ok'; m.textContent = 'Funciona. Oí: “' + t + '”'; };
+  r.onerror = e => {
+    micEv('error', e.error); if (e.error==='no-speech') return; bad = true; m.className = 'note bad';
+    m.textContent = (e.error==='not-allowed'||e.error==='service-not-allowed') ? (isFile ? micErrText('insecure') : micErrText('denied')) : e.error==='network' ? micErrText('network') : 'Error: ' + e.error;
+  };
+  r.onend = () => {
+    if (got || bad) return; m.className = 'note bad';
+    m.textContent = !MIC.ev.start ? micErrText('noengine') : !MIC.ev.soundstart
+      ? 'El reconocedor no recibió audio (usa otro dispositivo que el de la prueba). Cambiá el micrófono predeterminado de Windows y cerrá apps que lo usen (Teams, Zoom, Discord).'
+      : 'Le llega audio pero no devuelve texto. Revisá la conexión a internet y que ninguna otra pestaña use el micrófono.';
+  };
+  try{ r.start(); }catch(_){}
+  setTimeout(() => { try{ r.stop(); }catch(_){} }, 9000);
+  setTimeout(resumeListen, 9600);
+}
+$('#btnMicTest').onclick = runMicTest;
+$('#btnMicReset').onclick = async () => { MIC.fatal = null; $('#micMsg').className = 'note'; $('#micMsg').textContent = 'Reintentando…'; await runMicTest(); if (A.screen==='menu'||A.screen==='result'){ A.cmdDone = false; listen('cmd', routeCmd); } };
+
+/* ================= botones del HUD y acciones ================= */
+const IC = {
+  pause:'<svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>',
+  hear:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a4 4 0 010 6M19 6.5a8 8 0 010 11"/></svg>',
+  syl:'<span style="letter-spacing:.02em">a·b</span>',
+  stop:'<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  ok:'<svg viewBox="0 0 24 24"><path d="M5 12.5l5 5 9-10"/></svg>',
+  err:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  stuck:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7"/><path d="M12 9.5v4l2.5 1.5M10 3h4"/></svg>'
+};
+function dockBtn(act, icon, title, cls=''){ return `<button class="hud-btn round ${cls}" data-act="${act}" title="${title}" aria-label="${title}">${icon}</button>`; }
+function setDock(kind){
+  const d = $('#dock');
+  if (kind==='test') d.innerHTML = dockBtn('pause', RD.paused?IC.play:IC.pause, RD.paused?'Reanudar':'Pausar') + dockBtn('hear', IC.hear, 'Escuchar la palabra') + dockBtn('syl', IC.syl, 'Separar en sílabas', helpSyl?'on':'')
+     + (RD.src==='manual' ? dockBtn('okw', IC.ok, 'Bien', 'prim') + dockBtn('errw', IC.err, 'Error') + dockBtn('stkw', IC.stuck, 'Se trabó') : '') + dockBtn('end', IC.stop, 'Terminar');
+  else if (kind==='math') d.innerHTML = dockBtn('end', IC.stop, 'Terminar');
+  else d.innerHTML = '';
+}
+const ACTIONS = {
+  'menu-read': () => act('read'), 'menu-math': () => act('math'), 'again': () => act('again'), 'menu': () => act('menu'), 'finish': () => act('finish'),
+  'start': () => act('menu'), 'stop': () => S.running && stopSession(),
+  'sound': b => { S.sound = !S.sound; b.textContent = S.sound ? '🔊' : '🔇'; if (!S.sound) cancelSpeech(); },
+  'syl': () => { helpSyl = !helpSyl; renderTest(); setDock('test'); },
+  'pause': () => togglePause(), 'hear': () => speakWord(),
+  'okw': () => manualMark('ok'), 'errw': () => manualMark('err'), 'stkw': () => manualStuck(),
+  'end': () => { if (A.screen==='math') finishMath(true); else finishReading(true); },
+  'mans': b => answerMath(+b.dataset.v, b)
+};
+hud.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  b.classList.add('pressed'); setTimeout(() => b.classList.remove('pressed'), 180);
+  ACTIONS[b.dataset.act] && ACTIONS[b.dataset.act](b);
+});
+
+/* ================= asistente: flujo de pantallas ================= */
+function showScreen(s){
+  A.screen = s;
+  $('#menu').classList.toggle('show', s==='menu'); $('#result').classList.toggle('show', s==='result');
+  $('#testHud').classList.toggle('show', s==='reading'); $('#mathHud').classList.toggle('show', s==='math');
+  $('#home').classList.toggle('show', s==='home'); $('#hud').classList.toggle('at-home', s==='home'); $('#hud').classList.toggle('in-act', s==='reading' || s==='math'); $('#strip').classList.toggle('show', s==='reading' || s==='math');
+  $('#heard').textContent = '';
+}
+function haltActivities(){
+  stopVad(); RD.active = false; MATH.active = false; ACT.on = false; stopTimers(); cancelSpeech(); clearTimeout(A.menuTimer);
+}
+const MOOD_ADJ = {Neutral:'neutral', Contento:'contento', Tristeza:'desanimado', Enojo:'tenso', Sorpresa:'sorprendido'};
+function stateWord(){
+  const m = S.m; return m.fru > .5 ? 'Frustrado' : m.con > .5 ? 'Confundido' : m.fat > .5 ? 'Fatigado' : m.att < .45 ? 'Distraído' : m.att > .75 ? 'Concentrado' : 'Atento';
+}
+function moodPhrase(){
+  const m = S.m; if (m.fat > .5) return 'cansado'; if (m.fru > .45) return 'frustrado'; if (m.con > .45) return 'confundido'; if (m.att < .5) return 'distraído';
+  if (S.mood==='Contento') return 'contento y atento'; if (S.mood==='Tristeza') return 'un poco desanimado'; if (S.mood==='Enojo') return 'tenso'; return 'tranquilo y atento';
+}
+async function goHome(first, pre=''){
+  haltActivities(); const my = ++A.flow; showScreen('home'); setDock('none'); tone('open'); A.cmdDone = false; S.menuShown = true; S.lastEvent = 'estado_inicial';
+  listen('cmd', routeCmd);
+  await say(pre + (first ? 'Hola, soy Lumen. Estoy atento a cómo te sentís. Cuando quieras empezar, tocá iniciar actividad o decilo en voz alta.' : 'Cuando quieras seguir, tocá iniciar actividad o decilo en voz alta.'), {tag:'Asistente'});
+}
+async function goMenu(first){
+  haltActivities(); const my = ++A.flow; showScreen('menu'); setDock('none'); tone('open'); A.cmdDone = false; S.menuShown = true;
+  S.lastEvent = 'menu_asistente';
+  listen('cmd', routeCmd);   /* ya escucha mientras habla: se puede contestar sin esperar */
+  await say(`Te noto ${moodPhrase()}. ¿Hoy qué querés practicar? Podés decir matemáticas y números, o lectura.`, {tag:'Asistente'});
+  if (A.flow !== my) return;
+  A.menuTimer = setTimeout(() => { if (A.flow===my && A.screen==='menu') say('Cuando quieras, decime matemáticas o lectura, o tocá una opción.', {tag:'Asistente'}); }, 20000);
+}
+const READ_RX = /lectur|\bleer\b|\bleo\b|\blee\b|\bleemos\b|\bleamos\b|texto|letras|cuento/, MATH_RX = /mate|numer|cuent[ao]s?\b|suma|resta|multipl|calcul|tabla/;
+function routeCmd(info){
+  if (A.cmdDone) return; const t = norm2(info.latest); if (!t) return;
+  if (A.screen === 'home'){
+    if (READ_RX.test(t)) return act('read'); if (MATH_RX.test(t)) return act('math');
+    if (/inici|empez|comenz|arranc|actividad|practic|vamos|dale|listo|seguir|segui/.test(t)) return act('menu');
+  }
+  else if (A.screen === 'menu'){ if (READ_RX.test(t)) return act('read'); if (MATH_RX.test(t)) return act('math'); }
+  else if (A.screen === 'result'){
+    if (/termin|chau|basta|salir|nada mas|no gracias|listo/.test(t)) return act('finish');
+    if (/otra vez|repet|de nuevo|segui|continu/.test(t)) return act('again');
+    if (READ_RX.test(t)) return act('read'); if (MATH_RX.test(t)) return act('math');
+    if (/cambi|menu|otra cosa/.test(t)) return act('menu');
+  }
+}
+function act(a){
+  if (!S.running) return;
+  A.cmdDone = true; cancelSpeech();
+  if (a==='read') startReading(); else if (a==='math') startMath();
+  else if (a==='again') (A.last==='math' ? startMath() : startReading());
+  else if (a==='menu') goMenu(false); else if (a==='home') goHome(false); else if (a==='finish') finishSession();
+}
+async function finishSession(){ goHome(false, 'Listo. Buen trabajo hoy. '); }
+
+/* ---------- resultados y diagnóstico ---------- */
+const MOOD_COL = {Neutral:'#968fa6', Contento:'#ffd98a', Tristeza:'#7aa8ff', Enojo:'#ff5a7a', Sorpresa:'#6df7d0'};
+const STATE_COL = {Concentrado:'#6df7d0', Atento:'#6df7d0', Frustrado:'#ff5a7a', Confundido:'#a78bff', Fatigado:'#ffb347', 'Distraído':'#7f8fb3'};
+function faceSummary(){
+  const f = ACT.face;
+  if (!f.length) return {att:S.m.att, attMin:S.m.att, fru:S.m.fru, fruPeak:S.m.fru, con:S.m.con, conPeak:S.m.con, fat:S.m.fat, n:0, moods:[[S.mood,1]], series:[], peak:null};
+  const cnt = {}; f.forEach(x => cnt[x.mood||'Neutral'] = (cnt[x.mood||'Neutral']||0) + 1);
+  const moods = Object.entries(cnt).map(([k,v]) => [k, v/f.length]).sort((a,b) => b[1]-a[1]);
+  const its = S.items.slice(ACT.i0 || 0), pk = its.reduce((b,i) => (!b || i.fru > b.fru) ? i : b, null);
+  return {att:avg(...f.map(x=>x.att)), attMin:Math.min(...f.map(x=>x.att)), fru:avg(...f.map(x=>x.fru)), fruPeak:Math.max(...f.map(x=>x.fru)),
+    con:avg(...f.map(x=>x.con)), conPeak:Math.max(...f.map(x=>x.con)), fat:avg(...f.map(x=>x.fat)), n:f.length, moods, series:f, states:(() => { const c = {}; f.forEach(x => c[x.st||'Atento'] = (c[x.st||'Atento']||0)+1); return Object.entries(c).map(([k,v]) => [k, v/f.length]).sort((a,b)=>b[1]-a[1]); })(), peak: pk && pk.fru > .4 ? pk.item : null};
+}
+function faceLines(f){
+  const notes = [], recs = [], L = v => v>=.8?'alta':v>=.6?'buena':v>=.4?'media':'baja';
+  notes.push(`Atención ${L(f.att)}, del ${pct(f.att)} por ciento${f.attMin < .35 ? ', con una caída en algún momento' : ''}.`);
+  if (f.fruPeak > .5) notes.push(`Detecté frustración, con un pico del ${pct(f.fruPeak)} por ciento${f.peak ? ' en «' + String(f.peak).replace(/[.,;:!?]/g,'') + '»' : ''}.`);
+  else if (f.fruPeak > .3) notes.push('Hubo un poco de tensión, pero se mantuvo bajo control.');
+  else notes.push('No detecté frustración.');
+  if (f.conPeak > .5) notes.push('Se te notó confundido en algunas partes.');
+  if (f.fat > .45) notes.push('Se notan señales de cansancio.');
+  const m1 = f.moods[0], m2 = f.moods[1];
+  notes.push(`Tu ánimo fue sobre todo ${MOOD_ADJ[m1[0]] || 'neutral'}${m2 && m2[1] > .2 ? ', con momentos de ' + (MOOD_ADJ[m2[0]] || 'neutral') : ''}.`);
+  if (f.fruPeak > .5) recs.push('Cuando algo cueste, hacé una pausa corta y probá de a pasos chicos.');
+  if (f.conPeak > .5) recs.push('Si algo no se entiende, pedí un ejemplo o repetilo en voz alta.');
+  if (f.fat > .45) recs.push('Descansá cinco minutos: mirá algo lejano durante veinte segundos y tomá agua.');
+  if (f.att < .6) recs.push('Elegí un lugar sin distracciones y usá el dedo como guía.');
+  return {notes, recs};
+}
+function renderFaceReport(fs){
+  const dial = (n,v,c) => `<div class="dial" style="--p:${pct(v)};--c:var(${c})"><i><em>${pct(v)}</em></i>${esc(n)}</div>`;
+  $('#resBars').innerHTML = dial('Atención',fs.att,'--att') + dial('Frustración',fs.fruPeak,'--fru') + dial('Confusión',fs.conPeak,'--con') + dial('Fatiga',fs.fat,'--fat');
+  $('#resRibbon').innerHTML = fs.series.length ? fs.series.map(x => `<i style="background:${STATE_COL[x.st]||'#6df7d0'}"></i>`).join('') : '<i style="background:rgba(255,255,255,.1)"></i>';
+  const st = (fs.states||[]).slice(0,3).map(([k,v]) => `<span><b style="color:${STATE_COL[k]||'#6df7d0'}">●</b> ${esc(k)} ${pct(v)}%</span>`).join('');
+  const mo = fs.moods[0] ? `<span>Ánimo: ${esc(fs.moods[0][0])} ${pct(fs.moods[0][1])}%</span>` : '';
+  $('#resLeg').innerHTML = st + mo;
+}
+function showResult({title, label, score, chips, notes, recs}){
+  const my = ++A.flow; showScreen('result'); setDock('none'); tone('done');
+  A.cmdDone = false; listen('cmd', routeCmd);   /* se puede responder mientras la asistente habla */
+  $('#resTitle').textContent = title; $('#resScore').textContent = score; $('#sring').style.setProperty('--p', score); $('#resLabel').textContent = label;
+  $('#resChips').className = 'res'; $('#resChips').innerHTML = chips.map(([k,v]) => `<div><small>${esc(k)}</small><b>${esc(v)}</b></div>`).join('');
+  $('#resText').textContent = notes.join(' '); $('#resRecs').innerHTML = recs.slice(0,2).map(r => `<li>${esc(r)}</li>`).join('');
+  renderFaceReport(faceSummary());
+  logRec('Diagnóstico', '--cy', notes.join(' '));
+  recs.forEach(r => logRec('Recomendación', '--ok', r));
+  (async () => {
+    await sayLong(notes.join(' '), {tag:'Diagnóstico'}, () => A.flow === my); if (A.flow !== my) return;
+    await sayLong('Te recomiendo lo siguiente. ' + recs.join(' '), {tag:'Recomendación'}, () => A.flow === my); if (A.flow !== my) return;
+    await say('¿Querés repetir, cambiar de actividad o volver al inicio?', {tag:'Asistente'});
+  })();
+}
+
+/* ================= práctica de lectura ================= */
+const RD = {active:false, paused:false, src:'voice', level:1, words:[], idx:0, tStart:0, wordStart:0, endT:0, pauses:0, stucks:0, timers:[], processed:0, sess:-1, summary:null, heard:[]};
+const cur = () => RD.words[RD.idx];
+function buildWords(text){ return text.split(/\s+/).map(raw => ({raw, n:norm(raw), syl:syllabify(raw), st:'pending', attempts:0, wrong:[], ms:0, stuck:false, pause:false, help:false, att:0, fru:0, con:0})); }
+function renderTest(){
+  $('#bigText').innerHTML = RD.words.map((w,i) => {
+    const showSyl = (w.help || helpSyl) && w.syl.length > 1;
+    const inner = showSyl ? w.syl.map(s => `<span class="sy">${esc(s)}</span>`).join('·') : esc(w.raw);
+    return `<span class="w ${w.st}${i===RD.idx && RD.active ? ' cur' : ''}${w.stuck ? ' stuck' : ''}">${inner}</span>`;
+  }).join(' ');
+}
+function stopTimers(){ RD.timers.forEach(t => { clearTimeout(t); clearInterval(t); }); RD.timers = []; }
+async function startReading(){
+  haltActivities(); A.last = 'read'; const my = ++A.flow; showScreen('reading'); setDock('none');
+  RD.level = +$('#selLevel').value; RD.src = $('#selSrc').value;
+  let note = '';
+  if (RD.src==='voice' && (!SR || MIC.fatal)){ RD.src = 'manual'; note = ' El micrófono no está disponible, así que un moderador va a marcar la lectura.'; }
+  RD.words = buildWords(LEVELS[RD.level].text); RD.idx = 0; RD.pauses = 0; RD.stucks = 0; RD.processed = 0; RD.sess = -1; RD.paused = false; RD.summary = null; RD.heard = []; RD.active = false;
+  ACT.on = false; ACT.kind = 'read'; ACT.face = []; ACT.i0 = S.items.length; S.lastEvent = 'intro_lectura';
+  renderTest(); updatePanelRd();
+  if (RD.src==='voice') listen('read', readHandler);   /* el micrófono ya está activo mientras la asistente habla */
+  await say('Perfecto. Vamos a leer. Leé el texto en voz alta, a tu ritmo. Yo te escucho.' + note, {tag:'Lectura'});
+  if (A.flow !== my) return;
+  RD.active = true; ACT.on = true; RD.tStart = RD.wordStart = performance.now(); tone('start'); renderTest(); setDock('test'); S.lastEvent = 'inicio_lectura';
+  if (RD.src==='voice') startVad(); else if (RD.src==='sim') simNext();
+}
+function readHandler(info){
+  if (!RD.active || RD.paused) return;
+  if (RD.sess !== info.session){ RD.sess = info.session; RD.processed = 0; }
+  processHeard(info.all, info.final);
+  $('#heard').textContent = '● ' + info.all.slice(-6).join(' ');
+}
+function togglePause(){
+  RD.paused = !RD.paused;
+  if (RD.paused){ stopTimers(); pauseListen(); } else { RD.wordStart = performance.now(); resumeListen(); if (RD.src==='sim') simNext(); }
+  setDock('test');
+}
+function markWord(i, st){
+  const w = RD.words[i]; if (!w) return; const now = performance.now();
+  w.st = st; w.ms = now - RD.wordStart; w.att = S.m.att; w.fru = Math.max(w.fru, S.m.fru); w.con = Math.max(w.con, S.m.con);
+  S.items.push({tipo:'lectura', nivel:RD.level, fuente:RD.src, n:i+1, item:w.raw, estado:st, intentos:w.attempts, ms:Math.round(w.ms), pausa:+w.pause, trabada:+w.stuck, dicho:w.wrong.join(' '), att:w.att, fru:w.fru, con:w.con});
+  S.lastEvent = `palabra_${i+1}_${st}`; RD.idx = i+1; RD.wordStart = now; VAD.accum = 0;
+  renderTest(); if (RD.idx >= RD.words.length) finishReading(false);
+}
+function hearWord(h, tentative){
+  const w = cur(); if (!w) return true;
+  if (FILLERS.has(h)){ if (RD.idx>0 && !w.pause){ w.pause = true; RD.pauses++; } return true; }
+  if (VAD.lead > 0){ const old = RD.words[RD.idx - VAD.lead]; if (old && closeEnough(h, old.n, old.n.length<4)){ VAD.lead--; RD.prevH = ''; return true; } }
+  let hit = -1, used2 = false;
+  for (let k=0; k<6 && RD.idx+k < RD.words.length; k++){
+    const c = RD.words[RD.idx+k];
+    if (closeEnough(h, c.n, k>0 && c.n.length<4)){ hit = k; break; }
+  }
+  /* palabra partida por el reconocedor ("para" + "guas"): une con la anterior sin usar */
+  if (hit < 0 && RD.prevH && closeEnough(RD.prevH + h, w.n)){ hit = 0; used2 = true; }
+  if (hit >= 0){
+    if (hit===0 && VAD.on && VAD.accum>150){ const m = VAD.accum / Math.max(1, w.syl.length); VAD.pace = Math.min(420, Math.max(130, VAD.pace*.7 + m*.3)); }
+    /* ante la duda, correcto: si el reconocedor no alcanza a seguir una lectura rápida, las palabras intermedias cuentan como bien leídas */
+    for (let s=0; s<hit && RD.active; s++) markWord(RD.idx, 'ok');
+    if (RD.active) markWord(RD.idx, cur().attempts>=2 ? 'retry' : 'ok');
+    RD.prevH = ''; return true;
+  }
+  if (tentative){ return false; }
+  RD.prevH = h;
+  /* solo cuenta como intento fallido si se parece a la palabra esperada; el resto es ruido del reconocedor */
+  if (nearMiss(h, w.n)){
+    w.attempts++; w.wrong.push(h); S.lastEvent = 'intento_fallido';
+    if (w.attempts >= 4){ w.stuck = true; RD.stucks++; markWord(RD.idx, 'err'); } else renderTest();
+  }
+  return true;
+}
+function processHeard(words, isFinal){
+  if (!RD.active || RD.paused) return;
+  if (words.length < RD.processed) RD.processed = words.length;
+  for (let i=RD.processed; i<words.length && RD.active; i++){
+    if (!hearWord(words[i], i===words.length-1 && !isFinal)) break; RD.processed = i+1;
+  }
+  RD.heard = words;
+}
+function manualMark(st){ if (RD.active && !RD.paused) markWord(RD.idx, st==='ok' && cur().attempts ? 'retry' : st); }
+function manualStuck(){ const w = cur(); if (!RD.active || !w || w.stuck) return; w.stuck = true; w.help = true; RD.stucks++; onStuck(w); renderTest(); }
+document.addEventListener('keydown', e => {
+  if (/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if (e.key==='f' || e.key==='F'){ toggleFs(); return; }
+  if (!RD.active || RD.src!=='manual') return;
+  if (e.code==='Space' || e.key==='ArrowRight'){ e.preventDefault(); manualMark('ok'); }
+  else if (e.key==='x' || e.key==='X') manualMark('err');
+  else if (e.key==='s' || e.key==='S') manualStuck();
+});
+function speakWord(){
+  const w = cur(); if (!w) return; w.help = true; renderTest();
+  say(w.syl.length > 1 ? w.syl.join(', ') + '. ' + w.raw.replace(/[.,;:!?]/g,'') : w.raw.replace(/[.,;:!?]/g,''), {tag:'Palabra'});
+}
+function mutate(n){ return n.length>3 ? n.slice(0,-2) + 'x' : 'ta'; }
+function simNext(){
+  if (!RD.active || RD.src!=='sim' || RD.paused) return;
+  const w = cur(); if (!w) return; const r = Math.random(); let delay = 450 + Math.random()*450;
+  const t = (fn, ms) => RD.timers.push(setTimeout(fn, ms));
+  if (r < .14){ delay = LEVELS[RD.level].stuckMs + 900 + Math.random()*900; t(() => hearWord(w.n,false), delay); }
+  else if (r < .3){ t(() => hearWord(mutate(w.n), false), delay); t(() => hearWord(w.n,false), delay + 900); delay += 900; }
+  else t(() => hearWord(w.n,false), delay);
+  t(() => simNext(), delay + 40);
+}
+/* ===== asistencia por ritmo de voz (VAD) =====
+   El reconocedor del navegador se atrasa si se lee rápido. Medimos cuándo hay voz (nivel del micrófono) y,
+   si se está hablando de corrido, damos por leída la palabra actual según su duración esperada (máx. 3 palabras
+   de ventaja). Cuando el reconocedor alcanza, se resincroniza. En silencio NO avanza: ahí se detectan pausas y trabas. */
+const VAD = {on:false, ac:null, an:null, buf:null, stream:null, floor:.008, accum:0, lastT:0, lastSpeech:0, lead:0, pace:210, lv:0};
+async function startVad(){
+  stopVad();
+  try{
+    const st = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true}});
+    const ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.resume) await ac.resume();
+    const an = ac.createAnalyser(); an.fftSize = 1024; ac.createMediaStreamSource(st).connect(an);
+    Object.assign(VAD, {on:true, ac, an, buf:new Uint8Array(an.fftSize), stream:st, accum:0, lastT:performance.now(), lastSpeech:0, lead:0, floor:.008});
+  }catch(_){ VAD.on = false; }
+}
+function stopVad(){ VAD.on = false; try{ VAD.stream && VAD.stream.getTracks().forEach(t => t.stop()); VAD.ac && VAD.ac.close(); }catch(_){} VAD.stream = VAD.ac = VAD.an = null; }
+function vadStep(now){
+  if (!VAD.on) return false;
+  const dt = Math.min(100, now - VAD.lastT); VAD.lastT = now;
+  VAD.an.getByteTimeDomainData(VAD.buf); let sum = 0; for (const v of VAD.buf){ const x = (v-128)/128; sum += x*x; }
+  const rms = Math.sqrt(sum/VAD.buf.length); VAD.lv = rms;
+  if (rms < VAD.floor*1.6) VAD.floor = Math.max(.004, VAD.floor*.98 + rms*.02);
+  const talking = rms > Math.max(VAD.floor*2.8, .018) && !(window.speechSynthesis && speechSynthesis.speaking);
+  if (talking){ VAD.lastSpeech = now; VAD.accum += dt; }
+  return talking || (now - VAD.lastSpeech < 350);
+}
+function vadAssist(now){
+  if (!VAD.on || RD.src!=='voice') return;
+  const speaking = vadStep(now), w = cur(); if (!w) return;
+  if (!speaking || VAD.lead >= 3 || RD.idx === 0 && VAD.accum < 600) return;
+  const need = (w.syl.length * VAD.pace + 140) * 1.15;
+  if (VAD.accum >= need){ w.assumed = true; VAD.lead++; markWord(RD.idx, 'ok'); }
+}
+function rdTick(now){
+  if (!RD.active || RD.paused) return;
+  vadAssist(now); if (!RD.active) return;
+  const w = cur(); if (!w) return;
+  const el = now - RD.wordStart, lim = LEVELS[RD.level].stuckMs + (RD.idx===0 ? 2500 : 0);
+  if (RD.idx>0 && el>2000 && !w.pause){ w.pause = true; RD.pauses++; }
+  w.fru = Math.max(w.fru, S.m.fru); w.con = Math.max(w.con, S.m.con);
+  if (el > lim && !w.stuck){ w.stuck = true; w.help = true; RD.stucks++; onStuck(w); renderTest(); }
+}
+function onStuck(w){
+  const word = w.raw.replace(/[.,;:!?]/g,'');
+  const s = w.syl.length>1 ? ` Probá de a sílabas: ${w.syl.join(', ')}.` : '';
+  let msg;
+  if (S.m.con > .4) msg = `Parece que «${word}» no se entiende bien.${s} Decí cada sílaba y después juntalas.`;
+  else if (S.m.fru > .4) msg = `Se nota la frustración con «${word}».${s} Respirá, sin apuro.`;
+  else msg = `Te quedaste en «${word}».${s} Tomate tu tiempo.`;
+  S.lastEvent = 'trabada_' + norm(word);
+  logRec('Se trabó', '--fat', msg); say(msg, {tag:'Ayuda'});
+  if (S.mode==='demo' && RD.src==='sim'){ setPreset(Math.random()<.5 ? 'Confundido':'Frustrado'); RD.timers.push(setTimeout(() => setPreset('Concentrado'), 3500)); }
+}
+function finishReading(manualEnd){
+  if (!RD.words.length || A.screen!=='reading') return;
+  RD.active = false; ACT.on = false; RD.endT = performance.now(); stopTimers(); stopVad(); cancelSpeech();
+  const W = RD.words, done = W.filter(w => w.st!=='pending'), cnt = k => W.filter(w => w.st===k).length;
+  const ok = cnt('ok'), retry = cnt('retry'), total = Math.max(1, manualEnd ? done.length : W.length);
+  const acc = (ok + .5*retry)/total, mins = Math.max(1/60, (RD.endT - RD.tStart)/60000), wpm = (ok+retry)/mins, L = LEVELS[RD.level];
+  const flu = Math.round(100*(.5*acc + .3*clamp(wpm/L.target) + .2*clamp(1 - (.25*RD.stucks + .08*RD.pauses))));
+  const fs = faceSummary(), hard = W.filter(w => (w.stuck || w.st==='err' || w.attempts>0 || w.st==='skip') && (w.n.length>=3 || w.stuck || w.st==='err'));
+  RD.summary = {flu, acc, wpm, level:RD.level, dur:(RD.endT-RD.tStart)/1000, stucks:RD.stucks};
+  const label = flu >= 80 ? 'Lectura fluida' : flu >= 55 ? 'Lectura en desarrollo' : 'Lectura con dificultades';
+  const phr = flu >= 80 ? 'fue fluida' : flu >= 55 ? 'está en desarrollo' : 'tuvo dificultades';
+  const notes = [`Tu lectura ${phr}.`, `Leíste unas ${Math.round(wpm)} palabras por minuto, con ${pct(acc)} por ciento de precisión.`];
+  notes.push(hard.length ? `Te costaron: ${listJoin(hard.slice(0,3).map(w => w.raw.replace(/[.,;:!?]/g,'')))}.` : 'No tuviste palabras difíciles.');
+  const fl = faceLines(fs); notes.push(...fl.notes);
+  const recs = [];
+  const sylW = hard.find(w => w.syl.length>1); if (hard.length) recs.push(`Releé el texto separando en sílabas las palabras que te costaron${sylW ? ', por ejemplo ' + sylW.syl.join(' · ') : ''}.`);
+  recs.push(flu >= 80 ? 'Probá un texto un poco más difícil.' : flu >= 55 ? 'Repetí el texto una vez más, a tu ritmo.' : 'Practicá sílaba por sílaba, en voz alta y acompañado, antes de repetir.');
+  recs.push(...fl.recs);
+  logRec('Lectura', '--cy', `Fluidez ${flu}/100 · nivel ${RD.level}`);
+  showResult({title:'Resultado de lectura', label, score:flu, chips:[['Precisión',pct(acc)+'%'],['Ritmo',Math.round(wpm)+' ppm'],['Trabadas',RD.stucks],['Atención',pct(fs.att)+'%']], notes, recs:recs.slice(0,4)});
+  S.lastEvent = 'fin_lectura'; updatePanelRd();
+}
+
+/* ================= práctica de matemáticas ================= */
+const MATH = {active:false, level:1, n:0, total:6, q:null, done:[], stucks:0, tapOnly:false};
+function genQ(level){
+  let a, b, ans, op = Math.random()<.5 ? '+' : '-';
+  if (level===1){ if (op==='+'){ a=rnd(2,9); b=rnd(2,9); ans=a+b; } else { a=rnd(8,15); b=rnd(2,Math.min(9,a-1)); ans=a-b; } }
+  else if (level===2){ if (op==='+'){ a=rnd(11,39); b=rnd(5,29); ans=a+b; } else { a=rnd(21,60); b=rnd(6,Math.min(29,a-1)); ans=a-b; } }
+  else { op='×'; a=pickOne([2,3,4,5,10]); b=rnd(2,10); ans=a*b; }
+  const spoken = `${a} ${op==='+'?'más':op==='-'?'menos':'por'} ${b}`;
+  let hint;
+  if (op==='+') hint = a<10 && a+b>10 ? `Completá hasta diez: ${a} más ${10-a} es diez, y sumá lo que queda.` : 'Sumá primero las decenas y después las unidades.';
+  else if (op==='-') hint = `Contá hacia atrás desde ${a}, ${b} pasos.`;
+  else hint = `Pensalo como sumar ${a}, ${b} veces.`;
+  const ds = new Set(); [ans+1,ans-1,ans+2,ans-2,ans+10,ans-10,ans+a].forEach(x => { if (x>0 && x!==ans) ds.add(x); });
+  const opts = [ans, ...[...ds].sort(() => Math.random()-.5).slice(0,3)].sort(() => Math.random()-.5);
+  return {a, b, op, ans, spoken, hint, text:`${a} ${op} ${b}`, opts, attempts:0, said:[], done:false, stuck:false, t0:0, att:0, fru:0, con:0};
+}
+async function startMath(){
+  haltActivities(); A.last = 'math'; const my = ++A.flow; showScreen('math'); setDock('none');
+  Object.assign(MATH, {active:false, busy:false, level:+$('#selLevel').value, n:0, done:[], stucks:0, q:null, tapOnly: !SR || !!MIC.fatal});
+  ACT.on = false; ACT.kind = 'math'; ACT.face = []; ACT.i0 = S.items.length; S.lastEvent = 'intro_mate'; renderMath(); updatePanelRd();
+  await say('Muy bien. Vamos con números. Te voy a ir preguntando cuentas. ' + (MATH.tapOnly ? 'Tocá la respuesta correcta.' : 'Respondé en voz alta o tocá la respuesta.'), {tag:'Matemáticas'});
+  if (A.flow !== my) return;
+  MATH.active = true; ACT.on = true; setDock('math'); nextQ(my);
+}
+async function nextQ(my){
+  if (A.flow !== my || !MATH.active) return;
+  if (MATH.n >= MATH.total) return finishMath(false);
+  const q = genQ(MATH.level); MATH.q = q; MATH.n++; renderMath();
+  if (!MATH.tapOnly) listen('math', info => {
+    if (!MATH.active || MATH.q !== q || q.done) return;
+    const texts = [info.latest, ...(info.alts||[])];
+    $('#heard').textContent = '● ' + info.latest;
+    /* ante la duda, correcto: si cualquier alternativa (aun mal escrita) contiene la respuesta, vale */
+    if (hasAnswer(texts, q.ans)){ if (!q.t0) q.t0 = performance.now(); answerMath(q.ans); return; }
+    /* incorrecta solo si ya terminó de hablar y dijo claramente (palabra exacta o dígitos) otro número */
+    if (info.final){ const ex = parseNums(info.latest); if (ex.length) answerMath(ex[ex.length-1]); }
+  });
+  await say(`¿Cuánto es ${q.spoken}?`, {tag:'Matemáticas'});
+  if (A.flow !== my || MATH.q !== q || q.done) return;
+  q.t0 = performance.now(); tone('ping'); S.lastEvent = 'pregunta_' + MATH.n;
+}
+function renderMath(){
+  const q = MATH.q;
+  $('#mProg').textContent = `${Math.min(MATH.n,MATH.total)} / ${MATH.total}`; $('#mBar').style.width = (Math.max(0, MATH.n-1)/MATH.total*100) + '%';
+  $('#mQ').textContent = q ? q.text + ' = ?' : '—';
+  $('#mOpts').innerHTML = q ? q.opts.map(v => `<button class="hud-btn" data-act="mans" data-v="${v}">${v}</button>`).join('') : '';
+}
+async function answerMath(val, btn){
+  const q = MATH.q; if (!MATH.active || !q || q.done || MATH.busy) return;
+  const my = A.flow, ok = val === q.ans; q.attempts++; q.said.push(val);
+  q.fru = Math.max(q.fru, S.m.fru); q.con = Math.max(q.con, S.m.con);
+  if (ok){
+    q.done = true; MATH.busy = true; q.ms = performance.now() - (q.t0 || performance.now()); q.att = S.m.att; btn && btn.classList.add('right');
+    const optBtn = hud.querySelector(`#mOpts [data-v="${q.ans}"]`); optBtn && optBtn.classList.add('right');
+    tone('ok'); pushMath(q, q.attempts===1 ? 'ok' : 'retry');
+    MATH.level = clamp(MATH.level + (q.attempts===1 && q.ms < 8000 ? 1 : q.attempts>1 ? -1 : 0), 1, 3) | 0;
+    await say(pickOne(['¡Muy bien!','Correcto.','¡Eso es!','Perfecto.']), {tag:'Matemáticas'});
+    MATH.busy = false; nextQ(my);
+  } else {
+    tone('err'); btn && btn.classList.add('wrong'); S.lastEvent = 'respuesta_incorrecta';
+    if (q.attempts >= 2){
+      q.done = true; MATH.busy = true; q.ms = performance.now() - (q.t0 || performance.now()); q.att = S.m.att; pushMath(q, 'err');
+      MATH.level = clamp(MATH.level - 1, 1, 3);
+      const optBtn = hud.querySelector(`#mOpts [data-v="${q.ans}"]`); optBtn && optBtn.classList.add('right');
+      await say(`No pasa nada. La respuesta era ${q.ans}.`, {tag:'Matemáticas'});
+      MATH.busy = false; nextQ(my);
+    } else say('Casi. Probá de nuevo.', {tag:'Matemáticas'});
+  }
+}
+function pushMath(q, st){
+  MATH.done.push({q, st});
+  S.items.push({tipo:'matematica', nivel:MATH.level, fuente:MATH.tapOnly?'toque':'voz', n:MATH.n, item:q.text, estado:st, intentos:q.attempts, ms:Math.round(q.ms||0), pausa:+(q.ms>5000), trabada:+q.stuck, dicho:q.said.join(' '), att:q.att, fru:q.fru, con:q.con});
+}
+function mathTick(now){
+  const q = MATH.q; if (!MATH.active || !q || q.done || !q.t0 || MATH.busy) return;
+  q.fru = Math.max(q.fru, S.m.fru); q.con = Math.max(q.con, S.m.con);
+  if (!q.stuck && now - q.t0 > 9000){
+    q.stuck = true; MATH.stucks++; S.lastEvent = 'trabada_mate';
+    const msg = 'Tomate tu tiempo. ' + q.hint; logRec('Se trabó', '--fat', `${q.text}: ${q.hint}`); say(msg, {tag:'Ayuda'});
+  }
+}
+function finishMath(manualEnd){
+  if (A.screen!=='math') return;
+  MATH.active = false; ACT.on = false; cancelSpeech();
+  const D = MATH.done, total = Math.max(1, D.length);
+  const first = D.filter(d => d.st==='ok').length, second = D.filter(d => d.st==='retry').length, fail = D.filter(d => d.st==='err').length;
+  const acc = (first + .5*second)/total, avgMs = avg(...D.map(d => d.q.ms||0))/1000, fs = faceSummary();
+  const score = Math.round(100*(.7*acc + .2*clamp(1 - avgMs/12) + .1*clamp(1 - MATH.stucks*.3)));
+  const label = score >= 80 ? 'Muy buen cálculo' : score >= 55 ? 'Cálculo en desarrollo' : 'Necesitás más práctica';
+  const phr = score >= 80 ? 'fue muy bueno' : score >= 55 ? 'está en desarrollo' : 'necesita más práctica';
+  const opName = {'+':'sumas','-':'restas','×':'multiplicaciones'};
+  const bad = {}; D.filter(d => d.st!=='ok').forEach(d => bad[d.q.op] = (bad[d.q.op]||0)+1);
+  const worst = Object.entries(bad).sort((a,b) => b[1]-a[1])[0];
+  const notes = [`Tu cálculo ${phr}.`, `Resolviste ${first} de ${D.length} cuentas a la primera, y tardaste unos ${Math.round(avgMs)} segundo${Math.round(avgMs)===1?'':'s'} en promedio.`];
+  if (worst) notes.push(`Lo que más te costó fueron las ${opName[worst[0]]}.`); else notes.push('No tuviste cuentas difíciles.');
+  const fl = faceLines(fs); notes.push(...fl.notes);
+  const recs = [];
+  if (worst) recs.push(worst[0]==='+' ? 'Practicá completar hasta diez antes de sumar: 8 más 5 es 8 más 2, más 3.' : worst[0]==='-' ? 'Practicá contar hacia atrás con los dedos o en una recta numérica.' : 'Repasá las tablas del 2, 5 y 10, y pensalas como sumas repetidas.');
+  recs.push(score >= 80 ? 'Probá el siguiente nivel.' : 'Hacé tres cuentas por día y decí el resultado en voz alta.');
+  recs.push(...fl.recs);
+  logRec('Matemáticas', '--cy', `Puntaje ${score}/100`);
+  showResult({title:'Resultado de matemáticas', label, score, chips:[['A la 1ª',`${first}/${D.length}`],['Tiempo',Math.round(avgMs)+' s'],['Trabadas',MATH.stucks],['Atención',pct(fs.att)+'%']], notes, recs:recs.slice(0,4)});
+  S.lastEvent = 'fin_mate'; updatePanelRd();
+}
+
+/* ================= cámara y modelos ================= */
+const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+async function loadModels(){
+  const mod = await import(CDN + '/vision_bundle.mjs');
+  const files = await mod.FilesetResolver.forVisionTasks(CDN + '/wasm');
+  const mk = (Cls, url, extra) => async () => {
+    const o = d => ({baseOptions:{modelAssetPath:url, delegate:d}, runningMode:'VIDEO', ...extra});
+    try { return await Cls.createFromOptions(files, o('GPU')); } catch(e){ return await Cls.createFromOptions(files, o('CPU')); }
+  };
+  S.landmarker = await mk(mod.FaceLandmarker, 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', {numFaces:1, outputFaceBlendshapes:true})();
+  try { S.handLm = await mk(mod.HandLandmarker, 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', {numHands:1})(); }
+  catch(e){ console.warn('Sin seguimiento de manos', e); S.handLm = null; }
+}
+function enterFsFromGesture(){ if ($('#chkFs').checked && !document.fullscreenElement && stage.requestFullscreen) stage.requestFullscreen().catch(() => {}); }
+async function startCamera(){
+  enterFsFromGesture();                                   // se pide dentro del clic para que el navegador lo permita
+  $('#btnCam').disabled = true; $('#btnDemo').disabled = true;
+  const msg = $('#introMsg');
+  try{
+    msg.textContent = 'Pidiendo acceso a la cámara…';
+    S.stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    video.srcObject = S.stream; await video.play();
+    msg.textContent = 'Pidiendo acceso al micrófono…'; await probeMic(0);
+    msg.textContent = 'Cargando modelos de rostro y manos (≈12 MB)…';
+    await loadModels();
+    S.mode = 'cam'; begin(true);
+  }catch(e){
+    console.error(e);
+    if (S.stream) S.stream.getTracks().forEach(t=>t.stop());
+    msg.textContent = 'No se pudo iniciar la cámara/modelos (' + (e.name||'error') + '). Revisá permisos y conexión, o usá el modo demo.';
+    $('#btnCam').disabled = !$('#consent').checked; $('#btnDemo').disabled = false;
+  }
+}
+async function startDemo(){ enterFsFromGesture(); S.mode = 'demo'; $('#demoPanel').style.display = 'block'; probeMic(0); begin(false); }
+function begin(calibrate){
+  $('#intro').classList.remove('show');
+  S.running = true; S.t0 = performance.now(); S.rows = []; S.items = []; S.recs = []; $('#log').innerHTML = ''; S.menuShown = false;
+  S.perclos = []; S.yawns = []; S.base = {}; S.since = {}; S.lastFired = {}; S.lastEvent = '';
+  $('#dot').classList.add('on'); $('#aura').classList.add('on');
+  $('#hudStatus').textContent = S.mode==='cam' ? 'Lentes activos' : 'Lentes activos · demo';
+  ['btnStop','btnCsv','btnMenu'].forEach(id => $('#'+id).disabled = false); $('#btnRecal').disabled = S.mode!=='cam';
+  S.handsOn = $('#optHands').checked;
+  requestAnimationFrame(loop);
+  if (calibrate) startCalib(); else goHome(true);
+}
+function startCalib(){ if (S.mode!=='cam') return; S.calib = {until: performance.now()+4000, n:0, sum:{}}; $('#calib').classList.add('show'); }
+function stopSession(){
+  S.running = false; haltActivities(); stopListen(); showScreen('none');
+  if (S.stream) S.stream.getTracks().forEach(t=>t.stop());
+  S.stream = null; S.mode = null; handStep(null,0); demoAuto = false; setDock('none');
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  $('#dot').classList.remove('on'); $('#aura').classList.remove('on');
+  ['btnStop','btnMenu','btnRecal'].forEach(id => $('#'+id).disabled = true);
+  $('#intro').classList.add('show'); $('#introMsg').textContent = 'Sesión terminada. Todavía podés exportar los CSV.';
+  $('#btnDemo').disabled = false; $('#btnCam').disabled = !$('#consent').checked;
+}
+$('#btnStop').onclick = stopSession; $('#btnMenu').onclick = () => S.running && act('menu'); $('#btnRecal').onclick = startCalib;
+$('#consent').onchange = e => $('#btnCam').disabled = !e.target.checked;
+$('#btnCam').onclick = startCamera; $('#btnDemo').onclick = startDemo;
+$('#optHands').onchange = e => { S.handsOn = e.target.checked; if (!S.handsOn) handStep(null,0); };
+
+/* ---------- pantalla completa y escala del HUD ---------- */
+function toggleFs(){
+  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  else if (stage.requestFullscreen) stage.requestFullscreen().catch(() => setCaption('Tocá el botón ⛶ con el mouse o la tecla F para pantalla completa.', 'Aviso', 4000));
+}
+$('#btnFs').onclick = toggleFs;
+function fitHud(){
+  const r = stage.getBoundingClientRect(); const k = clamp(r.width/900, .7, 3);
+  hud.style.width = (r.width/k) + 'px'; hud.style.height = (r.height/k) + 'px'; hud.style.transform = `scale(${k})`; stage.style.setProperty('--k', k);
+}
+document.addEventListener('fullscreenchange', () => { stage.classList.toggle('fs', document.fullscreenElement === stage); fitHud(); });
+new ResizeObserver(fitHud).observe(stage); window.addEventListener('resize', fitHud); fitHud();
+
+/* ================= demo: señales simuladas ================= */
+const PRESETS = {
+  'Concentrado': {bs:{browDownLeft:.12,browDownRight:.12,eyeSquintLeft:.1,eyeSquintRight:.1}, pose:{yaw:0,pitch:0,roll:0}, blink:.05},
+  'Distraído':   {bs:{eyeLookOutLeft:.5,eyeLookInRight:.5}, pose:{yaw:.5,pitch:0,roll:0}, blink:.05},
+  'Fatigado':    {bs:{jawOpen:.05}, pose:{yaw:0,pitch:.28,roll:.05}, blink:.55, yawn:true},
+  'Frustrado':   {bs:{browDownLeft:.75,browDownRight:.7,mouthPressLeft:.55,mouthPressRight:.55,eyeSquintLeft:.45,eyeSquintRight:.45,mouthFrownLeft:.3,mouthFrownRight:.3}, pose:{yaw:0,pitch:.05,roll:0}, blink:.05},
+  'Confundido':  {bs:{browInnerUp:.65,browDownLeft:.45,browOuterUpRight:.45,eyeSquintLeft:.2}, pose:{yaw:.05,pitch:0,roll:.28}, blink:.05},
+  'Contento':    {bs:{mouthSmileLeft:.8,mouthSmileRight:.8,cheekSquintLeft:.4,cheekSquintRight:.4}, pose:{yaw:0,pitch:0,roll:0}, blink:.05},
+  'Triste':      {bs:{mouthFrownLeft:.65,mouthFrownRight:.65,browInnerUp:.5}, pose:{yaw:0,pitch:.12,roll:0}, blink:.1},
+  'Sorprendido': {bs:{eyeWideLeft:.8,eyeWideRight:.8,jawOpen:.5,browInnerUp:.8}, pose:{yaw:0,pitch:0,roll:0}, blink:0}
+};
+let demoKey = 'Concentrado', demoAuto = false, demoAutoT = 0, demoCur = {bs:{}, pose:{yaw:0,pitch:0,roll:0}}, demoBlinkT = 0;
+const presetsEl = $('#presets');
+Object.keys(PRESETS).forEach(k => {
+  const b = document.createElement('button'); b.type='button'; b.textContent = k; b.dataset.k = k;
+  b.onclick = () => { demoAuto = false; autoBtn.classList.remove('sel'); setPreset(k); }; presetsEl.appendChild(b);
+});
+const autoBtn = document.createElement('button'); autoBtn.type='button'; autoBtn.textContent = '▶ Escenario automático';
+autoBtn.onclick = () => { demoAuto = !demoAuto; autoBtn.classList.toggle('sel', demoAuto); demoAutoT = 0; }; presetsEl.appendChild(autoBtn);
+function setPreset(k){ demoKey = k; presetsEl.querySelectorAll('button[data-k]').forEach(b => b.classList.toggle('sel', b.dataset.k===k)); }
+setPreset('Concentrado');
+const AUTO_SEQ = ['Concentrado','Distraído','Concentrado','Confundido','Frustrado','Concentrado','Fatigado','Contento'];
+function demoStep(now, dt){
+  if (demoAuto){ demoAutoT += dt; const i = Math.floor(demoAutoT/9) % AUTO_SEQ.length; if (AUTO_SEQ[i]!==demoKey) setPreset(AUTO_SEQ[i]); }
+  const P = PRESETS[demoKey], k = 1 - Math.exp(-dt*5);
+  new Set([...Object.keys(demoCur.bs), ...Object.keys(P.bs)]).forEach(n => { const a = demoCur.bs[n]||0, b = P.bs[n]||0; demoCur.bs[n] = a + (b-a)*k; });
+  ['yaw','pitch','roll'].forEach(n => demoCur.pose[n] += (P.pose[n]-demoCur.pose[n])*k);
+  const tt = now/1000; let blink = 0;
+  if (P.blink > .4) blink = clamp(.5 + .45*Math.sin(tt*1.6));
+  else { demoBlinkT -= dt; if (demoBlinkT < -0.15) demoBlinkT = 3 + Math.random()*2; blink = demoBlinkT < 0 ? 1 : 0; }
+  demoCur.bs.eyeBlinkLeft = demoCur.bs.eyeBlinkRight = blink;
+  demoCur.bs.jawOpen = Math.max(demoCur.bs.jawOpen||0, P.yawn && (tt % 7) < 1.2 ? .75 : 0);
+  const wob = Math.sin(tt*1.3)*.015;
+  return { bs: demoCur.bs, pose:{ yaw:demoCur.pose.yaw + wob, pitch:demoCur.pose.pitch + wob, roll:demoCur.pose.roll }, lm:null };
+}
+
+/* ================= pose, rasgos y métricas ================= */
+function poseFromLm(lm){
+  const a = lm[33], b = lm[263], n = lm[1];
+  const mx = (a.x+b.x)/2, my = (a.y+b.y)/2, ed = Math.hypot(b.x-a.x, b.y-a.y) || 1e-6;
+  return { yaw:(n.x-mx)/ed, pitch:(n.y-my)/ed, roll:Math.atan2(b.y-a.y, b.x-a.x) };
+}
+const BASE_KEYS = ['outerUp','cheek','shrug','upLip','dimple','browDown','innerUp','squint','press','frown','sneer','browAsym','smile','wide','jaw','gazeH','gazeV','yaw','pitch','roll'];
+function features(bs, pose){
+  const g = k => bs[k] || 0;
+  return {
+    blink:avg(g('eyeBlinkLeft'),g('eyeBlinkRight')), smile:avg(g('mouthSmileLeft'),g('mouthSmileRight')), frown:avg(g('mouthFrownLeft'),g('mouthFrownRight')),
+    browDown:avg(g('browDownLeft'),g('browDownRight')),
+    browAsym:Math.abs(g('browDownLeft')-g('browDownRight'))+Math.abs(g('browOuterUpLeft')-g('browOuterUpRight')),
+    innerUp:g('browInnerUp'), squint:avg(g('eyeSquintLeft'),g('eyeSquintRight')), wide:avg(g('eyeWideLeft'),g('eyeWideRight')),
+    jaw:g('jawOpen'), press:avg(g('mouthPressLeft'),g('mouthPressRight')), sneer:avg(g('noseSneerLeft'),g('noseSneerRight')),
+    outerUp:avg(g('browOuterUpLeft'),g('browOuterUpRight')), cheek:avg(g('cheekSquintLeft'),g('cheekSquintRight')), shrug:avg(g('mouthShrugLower'),g('mouthShrugUpper')), upLip:avg(g('mouthUpperUpLeft'),g('mouthUpperUpRight')), dimple:avg(g('mouthDimpleLeft'),g('mouthDimpleRight')),
+    gazeH:((g('eyeLookInLeft')+g('eyeLookOutRight'))-(g('eyeLookOutLeft')+g('eyeLookInRight')))/2,
+    gazeV:avg(g('eyeLookUpLeft'),g('eyeLookUpRight'))-avg(g('eyeLookDownLeft'),g('eyeLookDownRight')),
+    yaw:pose.yaw, pitch:pose.pitch, roll:pose.roll
+  };
+}
+const SIGNED = new Set(['yaw','pitch','roll','gazeH','gazeV']);
+function adjust(f){
+  const o = {blink:f.blink};
+  BASE_KEYS.forEach(k => { const d = f[k] - (S.base[k]||0); o[k] = SIGNED.has(k) ? d : Math.max(0, d); });
+  return o;
+}
+function compute(f, now, dt){
+  const a = adjust(f);
+  /* emociones: puntajes relativos a tu cara neutra (calibración), suavizados y con histéresis */
+  const happy = clamp(a.smile*2.6 + a.cheek*.8 + a.dimple*.5);
+  let anger = clamp(a.browDown*1.6 + a.sneer*1.0 + a.press*1.1 + a.squint*.7);
+  if (a.press + a.sneer + a.upLip < .08) anger *= .5;                      /* solo ceño/entrecerrar = concentración, no enojo */
+  anger *= 1 - clamp(a.innerUp*1.3)*.8;                                      /* cejas internas arriba = confusión */
+  let sad = clamp(a.frown*1.9 + a.shrug*1.3 + (a.frown + a.shrug > .1 ? a.innerUp*.7 : 0));
+  let surprise = clamp(a.wide*1.7 + a.outerUp*1.2 + a.innerUp*.4 + a.jaw*1.0);
+  if (a.wide < .08 && a.jaw < .2) surprise *= .25;
+  anger = clamp(anger - happy*.9); sad = clamp(sad - happy*.9); surprise = clamp(surprise - happy*.3);
+  const rawE = {Contento:happy, Tristeza:sad, Enojo:anger, Sorpresa:surprise}, ke = 1 - Math.exp(-dt*6);
+  S.emoS = S.emoS || {Contento:0, Tristeza:0, Enojo:0, Sorpresa:0};
+  for (const k in rawE) S.emoS[k] += (rawE[k] - S.emoS[k])*ke;
+  const emo = S.emoS;
+  let top = 'Neutral', tv = .28; for (const k in emo) if (emo[k] > tv){ tv = emo[k]; top = k; }
+  if (S.mood !== top && S.mood !== 'Neutral' && emo[S.mood] > tv - .08) top = S.mood;   /* no parpadear entre etiquetas */
+  S.emo = emo; S.mood = top;
+  const eyesOpen = f.blink < .4 ? 1 : 0;
+  const dev = .55*clamp(Math.abs(a.yaw)/.35) + .25*clamp(Math.abs(a.pitch)/.35) + .25*clamp(Math.abs(a.gazeH)/.5)*eyesOpen;
+  const att = 1 - clamp(dev) - (f.blink > .5 ? .15 : 0);
+  const fru = clamp(1.6*(.4*a.browDown + .2*a.squint + .2*a.press + .1*a.frown + .1*a.sneer));
+  const con = clamp(1.5*(.45*a.innerUp + .3*a.browAsym + .15*a.squint) + .3*clamp(Math.abs(a.roll)/.3));
+  S.perclos.push({t:now, c:f.blink > .5}); while (S.perclos.length && now - S.perclos[0].t > 30000) S.perclos.shift();
+  const perclos = S.perclos.length ? S.perclos.filter(x=>x.c).length / S.perclos.length : 0;
+  const yawning = a.jaw > .45 && a.wide < .3 && a.smile < .3;
+  if (yawning){ if (S.yawStart == null) S.yawStart = now; else if (now - S.yawStart > 700 && !S.yawCounted){ S.yawns.push(now); S.yawCounted = true; } }
+  else { S.yawStart = null; S.yawCounted = false; }
+  while (S.yawns.length && now - S.yawns[0] > 300000) S.yawns.shift();
+  const fatRaw = clamp(.5*clamp(perclos/.2) + .3*clamp(S.yawns.length/2) + .2*clamp(Math.max(0,a.pitch)/.25) + .2*(a.press + a.browDown)/2);
+  const k = 1 - Math.exp(-dt*3.5), kf = 1 - Math.exp(-dt*.8);
+  S.m.att += (att - S.m.att)*k; S.m.fru += (fru - S.m.fru)*k; S.m.con += (con - S.m.con)*k; S.m.fat += (fatRaw - S.m.fat)*kf;
+}
+
+/* ================= recomendaciones en vivo ================= */
+function logRec(tag, col, text){
+  const t = S.t0 ? (performance.now() - S.t0)/1000 : 0;
+  S.recs.push({t, tag, text}); S.lastRecText = tag;
+  const li = document.createElement('li'); li.innerHTML = `<small>${fmtT(t)}</small><b style="color:var(${col})">${esc(tag)}:</b> ${esc(text)}`;
+  $('#log').prepend(li);
+}
+const RULES = [
+  {id:'att', col:'--att', tag:'Atención', test:()=>S.m.att < .4 && A.screen==='reading', sustain:4000, cd:40000, text:'Se dispersó tu atención. Usá el dedo como guía y volvé al comienzo de la oración.'},
+  {id:'fat', col:'--fat', tag:'Fatiga', test:()=>S.m.fat > .55, sustain:3000, cd:90000, speak:true, text:'Notamos señales de cansancio. Hacé una pausa: mirá algo lejano durante veinte segundos o descansá cinco minutos.'},
+  {id:'fru', col:'--fru', tag:'Frustración', test:()=>S.m.fru > .5, sustain:3000, cd:45000, text:'Parece difícil. Activamos la ayuda por sílabas y podés ir más despacio.', action:()=>{ helpSyl = true; if (A.screen==='reading'){ renderTest(); setDock('test'); } }},
+  {id:'con', col:'--con', tag:'Confusión', test:()=>S.m.con > .5, sustain:3000, cd:45000, text:'Algo no cierra. Volvé a la última palabra que entendiste y repetila en voz alta.'},
+  {id:'sad', col:'--mut', tag:'Ánimo', test:()=>S.emo.Tristeza > .5, sustain:6000, cd:120000, text:'El progreso no es lineal. Un corte breve puede ayudarte a retomar.'},
+  {id:'long', col:'--fat', tag:'Tiempo de estudio', test:()=>(performance.now()-S.t0) > 25*60000, sustain:0, cd:25*60000, speak:true, text:'Llevás veinticinco minutos. Hacé una pausa de cinco minutos antes de seguir.'}
+];
+function checkRules(now){
+  if (A.screen!=='reading' && A.screen!=='math') return;
+  for (const r of RULES){
+    if (r.test()){
+      if (S.since[r.id] == null) S.since[r.id] = now;
+      if (now - S.since[r.id] >= r.sustain && now - (S.lastFired[r.id] || -1e9) >= r.cd){
+        S.lastFired[r.id] = now; r.action && r.action(); logRec(r.tag, r.col, r.text);
+        if (r.speak) say(r.text, {tag:r.tag}); else { setCaption(r.text, r.tag, 7000); tone('ping'); }
+      }
+    } else S.since[r.id] = null;
+  }
+}
+
+/* ================= manos: cursor, pellizco, permanencia ================= */
+const HAND = {vis:false, fx:0, fy:0, hist:[], pinch:false, hover:null, hoverT:0, fired:false, GAIN:1.35};
+const handEl = $('#hand');
+const btnAt = (x,y) => { const e = document.elementFromPoint(x,y); const b = e && e.closest('.hud-btn'); return b && !b.disabled ? b : null; };
+function handStep(lm, now){
+  if (!lm || !S.handsOn){
+    handEl.style.display = 'none'; HAND.vis = false; HAND.pinch = false;
+    if (HAND.hover) HAND.hover.classList.remove('hover'); HAND.hover = null; handEl.querySelector('i').style.setProperty('--p',0); return;
+  }
+  const tx = clamp(((1-lm[8].x)-.5)*HAND.GAIN+.5), ty = clamp((lm[8].y-.5)*HAND.GAIN+.5);
+  if (!HAND.vis){ HAND.fx = tx; HAND.fy = ty; } else { HAND.fx += (tx-HAND.fx)*.45; HAND.fy += (ty-HAND.fy)*.45; }
+  HAND.vis = true;
+  const rect = stage.getBoundingClientRect(), k = parseFloat(stage.style.getPropertyValue('--k')) || 1;
+  const px = HAND.fx*rect.width, py = HAND.fy*rect.height, cx = rect.left+px, cy = rect.top+py;
+  handEl.style.display = 'block'; handEl.style.transform = `translate(${px}px,${py}px) scale(${k})`;
+  HAND.hist.push({t:now, cx, cy}); while (HAND.hist.length && now - HAND.hist[0].t > 400) HAND.hist.shift();
+  const vw = video.videoWidth || 1280, vh = video.videoHeight || 720;
+  const d = (p,q) => Math.hypot((p.x-q.x)*vw, (p.y-q.y)*vh);
+  const ratio = d(lm[4],lm[8]) / Math.max(1e-6, d(lm[0],lm[9])), was = HAND.pinch;
+  if (!HAND.pinch && ratio < .32) HAND.pinch = true; else if (HAND.pinch && ratio > .48) HAND.pinch = false;
+  handEl.classList.toggle('pinch', HAND.pinch);
+  const target = btnAt(cx, cy);
+  if (target !== HAND.hover){ if (HAND.hover) HAND.hover.classList.remove('hover'); if (target) target.classList.add('hover'); HAND.hover = target; HAND.hoverT = now; HAND.fired = false; }
+  if (HAND.pinch && !was){
+    const old = HAND.hist.find(h => h.t >= now-150) || HAND.hist[0];
+    const t2 = btnAt(old.cx, old.cy) || target; if (t2) t2.click(); HAND.fired = true;
+  }
+  let prog = 0;
+  if ($('#optDwell').checked && target && !HAND.pinch && !HAND.fired){ prog = (now - HAND.hoverT)/1000; if (prog >= 1){ target.click(); HAND.fired = true; prog = 0; } }
+  handEl.querySelector('i').style.setProperty('--p', Math.round(clamp(prog)*100));
+}
+
+/* ================= dibujo (cámara limpia, sin adornos sobre la cara) ================= */
+function fitInfo(){
+  const vw = video.videoWidth || cv.width, vh = video.videoHeight || cv.height;
+  const sc = Math.max(cv.width/vw, cv.height/vh), dw = vw*sc, dh = vh*sc;
+  return {dw, dh, ox:(cv.width-dw)/2, oy:(cv.height-dh)/2};
+}
+const vig = (()=>{ const c = document.createElement('canvas'); c.width = 1280; c.height = 720; const x = c.getContext('2d');
+  const g = x.createRadialGradient(640,360,260,640,360,820); g.addColorStop(0,'rgba(0,8,16,0)'); g.addColorStop(1,'rgba(0,6,14,.7)'); x.fillStyle = g; x.fillRect(0,0,1280,720); return c; })();
+function drawDemoFace(){
+  const w = cv.width, h = cv.height, bs = demoCur.bs, p = demoCur.pose;
+  const g = ctx.createRadialGradient(w/2,h/2,60,w/2,h/2,w*.6); g.addColorStop(0,'#10263a'); g.addColorStop(1,'#03070c'); ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+  const cx = w/2 + p.yaw*200, cy = h/2 + p.pitch*150;
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(1.3,1.3); ctx.rotate(p.roll);
+  ctx.strokeStyle = 'rgba(190,225,240,.55)'; ctx.fillStyle = 'rgba(190,225,240,.05)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0,0,112,146,0,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  const blink = clamp(avg(bs.eyeBlinkLeft||0, bs.eyeBlinkRight||0)), wide = avg(bs.eyeWideLeft||0, bs.eyeWideRight||0), sq = avg(bs.eyeSquintLeft||0, bs.eyeSquintRight||0);
+  for (const sd of [-1,1]){
+    const ex = sd*46 + p.yaw*18, ey = -26, open = clamp(1 - blink - sq*.5 + wide*.4, .05, 1.3);
+    ctx.beginPath(); ctx.ellipse(ex, ey, 19, 11*open, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(ex, ey, 5*Math.min(1,open+.2), 0, Math.PI*2); ctx.fillStyle = 'rgba(190,225,240,.9)'; ctx.fill();
+    const down = sd<0 ? (bs.browDownLeft||0) : (bs.browDownRight||0), up = bs.browInnerUp||0, outer = sd<0 ? (bs.browOuterUpLeft||0):(bs.browOuterUpRight||0);
+    const by = ey - 26 - up*10 - outer*10 + down*14;
+    ctx.beginPath(); ctx.moveTo(ex - sd*22, by + down*2 - outer*6); ctx.lineTo(ex + sd*22, by - up*8 + down*8); ctx.stroke();
+  }
+  const sm = avg(bs.mouthSmileLeft||0, bs.mouthSmileRight||0), fr = avg(bs.mouthFrownLeft||0, bs.mouthFrownRight||0), jaw = bs.jawOpen||0, pr = avg(bs.mouthPressLeft||0, bs.mouthPressRight||0);
+  ctx.beginPath(); const my = 64, mw = 42 - pr*10;
+  ctx.moveTo(-mw, my - sm*10 + fr*8); ctx.quadraticCurveTo(0, my + sm*28 - fr*22 + jaw*40, mw, my - sm*10 + fr*8);
+  if (jaw > .15) ctx.quadraticCurveTo(0, my + jaw*60 + 14, -mw, my - sm*10 + fr*8);
+  ctx.stroke(); ctx.restore();
+}
+function drawFrame(haveFace){
+  const w = cv.width, h = cv.height;
+  if (S.mode === 'cam'){
+    const f = fitInfo();
+    ctx.save(); ctx.filter = 'saturate(.8) contrast(1.05) brightness(.92)'; ctx.translate(f.ox+f.dw, f.oy); ctx.scale(-1,1); ctx.drawImage(video, 0, 0, f.dw, f.dh); ctx.restore();
+    ctx.fillStyle = 'rgba(2,14,28,.22)'; ctx.fillRect(0,0,w,h);
+  } else drawDemoFace();
+  ctx.drawImage(vig, 0, 0, w, h);
+}
+
+/* ================= panel ================= */
+function updatePanelRd(){
+  const inMath = A.last==='math' && (A.screen==='math' || (A.screen==='result' && !RD.active && MATH.done.length && A.last==='math'));
+  if (inMath){
+    $('#p-state').textContent = MATH.active ? 'Matemáticas' : 'Finalizada'; $('#p-word').textContent = `${Math.min(MATH.n,MATH.total)}/${MATH.total}`;
+    const D = MATH.done, ok = D.filter(d=>d.st==='ok').length; $('#p-acc').textContent = D.length ? pct((ok+.5*D.filter(d=>d.st==='retry').length)/D.length)+'%' : '—';
+    $('#p-wpm').textContent = D.length ? Math.round(avg(...D.map(d=>d.q.ms||0))/1000)+' s' : '—'; $('#p-stk').textContent = MATH.stucks; $('#p-pau').textContent = D.filter(d=>d.q.ms>5000).length;
+    $('#p-diff').innerHTML = D.filter(d=>d.st!=='ok').map(d => `<span>${esc(d.q.text)}</span>`).join(''); return;
+  }
+  const W = RD.words, done = W.filter(w => w.st!=='pending').length;
+  $('#p-state').textContent = RD.active ? (RD.paused?'En pausa':'Leyendo…') : (RD.summary ? 'Finalizada' : A.screen==='menu' ? 'Menú' : 'En espera');
+  $('#p-word').textContent = W.length ? `${Math.min(done,W.length)}/${W.length}` : '—';
+  const ok = W.filter(w=>w.st==='ok').length, rt = W.filter(w=>w.st==='retry').length, acc = (ok + .5*rt)/Math.max(1,done);
+  const mins = Math.max(1/60, ((RD.active ? performance.now() : RD.endT) - RD.tStart)/60000), showM = done >= 3;
+  $('#p-acc').textContent = done ? pct(acc)+'%' : '—'; $('#c-acc').textContent = done ? pct(acc)+'%' : '—';
+  $('#p-wpm').textContent = showM ? Math.round((ok+rt)/mins) : '—'; $('#c-wpm').textContent = showM ? Math.round((ok+rt)/mins) : '—';
+  $('#p-stk').textContent = RD.stucks; $('#c-stk').textContent = RD.stucks; $('#p-pau').textContent = RD.pauses;
+  $('#p-diff').innerHTML = W.filter(w => w.stuck || w.st==='err' || w.attempts>0 || w.st==='skip').map(w => `<span>${esc(w.syl.join('·'))}</span>`).join('');
+  const n = W.length; $('#progTxt').textContent = `${Math.min(RD.idx+1, n)} / ${n}`; $('#progBar').style.width = (n ? done/n*100 : 0) + '%';
+}
+
+const FACE_KINDS = ['Neutral','Contento','Tristeza','Enojo','Sorpresa'];
+const FACE_SVG = {
+  Neutral:'<path d="M14 26h12"/>',
+  Contento:'<path d="M13 23.5q7 7.5 14 0"/>',
+  Tristeza:'<path d="M14 28q6-6 12 0"/><path d="M10.5 14.5l5.5-2.5M29.5 14.5L24 12"/>',
+  Enojo:'<path d="M10.5 11.5l6.5 3.5M29.5 11.5L23 15"/><path d="M14 28q6-3.5 12 0"/>',
+  Sorpresa:'<circle cx="20" cy="27" r="3.2"/><path d="M10.5 10.5q3.5-2.5 7 0M22.5 10.5q3.5-2.5 7 0"/>'
+};
+$('#faces').innerHTML = FACE_KINDS.map(k => `<div class="fc" id="fc-${k}" style="--c:${MOOD_COL[k]}" title="${k}"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16.5"/><circle cx="14" cy="18" r="1.5" fill="currentColor" stroke="none"/><circle cx="26" cy="18" r="1.5" fill="currentColor" stroke="none"/>${FACE_SVG[k]}</svg><b id="fv-${k}"></b></div>`).join('');
+const FIL = [['att','ATN','--att'],['fat','FAT','--fat'],['fru','FRU','--fru'],['con','CON','--con']];
+$('#fils').innerHTML = FIL.map(([k,l,c]) => `<div class="fl" style="--c:var(${c})"><i><u id="fl-${k}"></u></i>${l}</div>`).join('');
+/* círculo de inicio: el propio botón muestra atención, fatiga, frustración y confusión como 4 arcos */
+(() => {
+  const arcs = FIL.map(([k,l,c], i) => { const rot = i*90 + 4;
+    return `<circle cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="21 79" transform="rotate(${rot} 60 60)" stroke="rgba(255,255,255,.14)"/>` +
+           `<circle id="ir-${k}" cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="0 100" transform="rotate(${rot} 60 60)" stroke="var(${c})" style="filter:drop-shadow(0 0 5px var(${c}))"/>`; }).join('');
+  $('#iris').innerHTML = `<svg viewBox="0 0 120 120"><g fill="none" stroke-linecap="round" transform="rotate(-90 60 60)">${arcs}</g><path d="M50 41l27 19-27 19z" fill="currentColor" stroke="none"/></svg>`;
+})();
+function auraColor(){
+  const sw = stateWord(); if ((sw==='Concentrado' || sw==='Atento') && S.mood==='Contento') return '#ffd98a'; return STATE_COL[sw] || '#6df7d0';
+}
+function updateHome(){
+  const m = S.m, sw = stateWord(), col = auraColor();
+  $('#hud').style.setProperty('--auraC', col);
+  if (A.screen==='home'){
+    $('#hmState').textContent = sw;
+    const mx = Math.max(S.emo.Contento||0, S.emo.Tristeza||0, S.emo.Enojo||0, S.emo.Sorpresa||0);
+    FACE_KINDS.forEach(k => {
+      const v = k==='Neutral' ? 1 - clamp(mx*1.6) : (S.emo[k] || 0);
+      $('#fc-'+k).classList.toggle('act', S.mood===k); $('#fv-'+k).textContent = pct(v) + '%';
+    });
+    FIL.forEach(([k]) => { $('#fl-'+k).style.height = pct(m[k]) + '%'; $('#ir-'+k).setAttribute('stroke-dasharray', `${21*clamp(m[k])} 100`); });
+  } else if (A.screen==='reading' || A.screen==='math'){
+    $('#stState').textContent = sw;
+  }
+}
+function updateUI(now){
+  $('#hudTime').textContent = fmtT((now - S.t0)/1000); $('#hudFps').textContent = S.fps + ' fps'; $('#mood').textContent = S.mood;
+  [['att',S.m.att],['fat',S.m.fat],['fru',S.m.fru],['con',S.m.con]].forEach(([k,v]) => {
+    $('#m-'+k).style.width = pct(v)+'%'; $('#v-'+k).textContent = pct(v)+'%';
+    const r = $('#r-'+k); r.style.setProperty('--p', pct(v)); r.firstElementChild.textContent = pct(v);
+  });
+  if (S.rows.length){
+    const r = S.rows; $('#s-att').textContent = pct(avg(...r.map(x=>x.att))) + '%'; $('#s-foc').textContent = fmtT(r.filter(x=>x.att>.6).length);
+    $('#s-fat').textContent = fmtT(r.filter(x=>x.fat>.55).length); $('#s-rec').textContent = S.recs.length;
+  }
+  $('#btnCsvRd').disabled = !S.items.length; updatePanelRd(); updateHome();
+}
+function drawChart(){
+  const c = $('#chart'), dpr = window.devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight;
+  if (c.width !== Math.round(W*dpr)){ c.width = Math.round(W*dpr); c.height = Math.round(H*dpr); }
+  const x = c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,H);
+  const L = 28, B = 16, T = 6, R = 6, pw = W-L-R, ph = H-T-B;
+  x.strokeStyle = 'rgba(255,232,190,.15)'; x.fillStyle = '#7f98ad'; x.font = '10px system-ui'; x.lineWidth = 1; x.textAlign = 'right';
+  [0,.5,1].forEach(v => { const y = T + ph*(1-v); x.beginPath(); x.moveTo(L,y); x.lineTo(W-R,y); x.stroke(); x.fillText(pct(v), L-4, y+3); });
+  x.textAlign = 'left'; x.fillText('−2 min', L, H-3); x.textAlign = 'right'; x.fillText('ahora', W-R, H-3);
+  const data = S.rows.slice(-120), N = 120;
+  [['att','#6df7d0',[]],['fat','#ffb347',[7,4]],['fru','#ff5a7a',[2,3]],['con','#a78bff',[10,3,2,3]]].forEach(([k,col,dash]) => {
+    x.strokeStyle = col; x.lineWidth = 2; x.setLineDash(dash); x.beginPath();
+    data.forEach((d,i) => { const px = L + pw*((N-data.length+i)/(N-1)), py = T + ph*(1-d[k]); i ? x.lineTo(px,py) : x.moveTo(px,py); });
+    x.stroke(); x.setLineDash([]);
+  });
+  x.fillStyle = '#ffc857'; data.forEach((d,i) => { if (d.ev && d.ev.startsWith('trabada')){ const px = L + pw*((N-data.length+i)/(N-1)); x.fillRect(px-1, T, 2, ph); } });
+}
+
+/* ================= bucle principal ================= */
+let prevNow = 0;
+function loop(now){
+  if (!S.running) return;
+  requestAnimationFrame(loop);
+  const dt = Math.min(.1, (now - (prevNow || now))/1000) || .033; prevNow = now;
+  S.frames++; S.frameN++;
+  if (now - S.fpsT > 1000){ S.fps = Math.round(S.frames*1000/(now-S.fpsT)); S.frames = 0; S.fpsT = now; S.handEvery = S.fps < 20 ? 2 : 1; }
+
+  let res = null, haveFace = false;
+  if (S.mode === 'cam'){
+    if (video.readyState >= 2 && video.currentTime !== S.lastVT){
+      S.lastVT = video.currentTime;
+      const out = S.landmarker.detectForVideo(video, now);
+      if (out.faceLandmarks && out.faceLandmarks.length){
+        const lm = out.faceLandmarks[0], bs = {};
+        (out.faceBlendshapes[0]?.categories || []).forEach(c => bs[c.categoryName] = c.score);
+        res = {bs, pose: poseFromLm(lm)}; haveFace = true; S.noFaceSince = null; S.lastRes = res;
+      } else if (S.noFaceSince == null) S.noFaceSince = now;
+      if (S.handLm && S.handsOn && S.frameN % S.handEvery === 0){
+        const ho = S.handLm.detectForVideo(video, now + .5); S.lastHand = ho.landmarks && ho.landmarks.length ? ho.landmarks[0] : null;
+      }
+      if (S.handLm && S.handsOn) handStep(S.lastHand, now);
+    } else if (S.lastRes && S.noFaceSince == null){ res = S.lastRes; haveFace = true; }
+  } else { res = demoStep(now, dt); haveFace = true; }
+
+  drawFrame(haveFace);
+
+  if (haveFace){
+    const f = features(res.bs, res.pose);
+    if (S.calib){
+      const left = S.calib.until - now; $('#calibBar').style.width = pct(1 - left/4000) + '%';
+      S.calib.n++; BASE_KEYS.forEach(k => S.calib.sum[k] = (S.calib.sum[k]||0) + f[k]);
+      if (left <= 0){
+        BASE_KEYS.forEach(k => S.base[k] = S.calib.sum[k]/S.calib.n);
+        S.calib = null; S.perclos = []; S.yawns = []; $('#calib').classList.remove('show');
+        if (!S.menuShown){ S.t0 = now; S.rows = []; S.lastSample = now; goHome(true); }
+      }
+    } else {
+      compute(f, now, dt); checkRules(now); rdTick(now); mathTick(now);
+      if (now - S.lastSample >= 1000){
+        S.lastSample = now;
+        const w = RD.active ? cur() : null;
+        S.rows.push({t:(now-S.t0)/1000, task:$('#task').value, emo:S.mood, att:S.m.att, fat:S.m.fat, fru:S.m.fru, con:S.m.con, rec:S.lastRecText, word: w ? w.raw : (MATH.active && MATH.q ? MATH.q.text : ''), ev:S.lastEvent});
+        if (ACT.on) ACT.face.push({t:(now-S.t0)/1000, att:S.m.att, fru:S.m.fru, con:S.m.con, fat:S.m.fat, mood:S.mood, st:stateWord()});
+        S.lastRecText = ''; S.lastEvent = ''; drawChart();
+      }
+    }
+  } else { rdTick(now); mathTick(now); }
+  if (now - S.lastUI > 150){ S.lastUI = now; updateUI(now); }
+}
+
+/* ================= exportar CSV ================= */
+function download(name, text){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿'+text], {type:'text/csv;charset=utf-8'})); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const pidOf = () => ($('#pid').value || 'sin_id').replace(/[^\w-]/g,'');
+$('#btnCsv').onclick = () => {
+  const head = 'participante,t_seg,tarea,emocion,atencion,fatiga,frustracion,confusion,item_actual,evento,recomendacion\n';
+  download(`lumen_sesion_${pidOf()}_${Date.now()}.csv`, head + S.rows.map(r => [pidOf(), r.t.toFixed(0), `"${r.task}"`, r.emo, r.att.toFixed(2), r.fat.toFixed(2), r.fru.toFixed(2), r.con.toFixed(2), `"${r.word}"`, r.ev, `"${r.rec}"`].join(',')).join('\n'));
+};
+$('#btnCsvRd').onclick = () => {
+  const head = 'participante,tipo,nivel,fuente,n,item,estado,intentos,ms,pausa,trabada,dicho,atencion,frustracion_max,confusion_max\n';
+  download(`lumen_practica_${pidOf()}_${Date.now()}.csv`, head + S.items.map(i => [pidOf(), i.tipo, i.nivel, i.fuente, i.n, `"${i.item}"`, i.estado, i.intentos, i.ms, i.pausa, i.trabada, `"${i.dicho}"`, i.att.toFixed(2), i.fru.toFixed(2), i.con.toFixed(2)].join(',')).join('\n'));
+};
+$('#task').onchange = () => { if (S.running) logRec('Tarea', '--mut', $('#task').value || 'ninguna'); };
+window.addEventListener('resize', () => S.rows.length && drawChart());
+drawChart();
+
+/* gancho para pruebas automáticas */
+window.__lumen = { S, RD, MATH, A, MIC, HAND, syllabify, parseNums, handStep, say, goMenu, act, setPreset,
+  fakeHand(fx, fy, pinch){
+    const G = HAND.GAIN, x = 1 - ((fx-.5)/G+.5), y = (fy-.5)/G+.5, lm = Array.from({length:21}, () => ({x, y}));
+    lm[0] = {x, y:y+.2}; lm[9] = {x, y:y+.05}; lm[8] = {x, y}; lm[4] = {x:x+(pinch?.01:.1), y};
+    handStep(lm, performance.now());
+  } };
+</script>
+</body>
+</html>
