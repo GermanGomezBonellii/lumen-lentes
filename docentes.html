@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen docentes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* Idea de layout: el visor de los lentes (siempre oscuro) a la izquierda, panel de pruebas del prototipo a la derecha. */
+:root{
+  --bg:#F2F5F4; --surface:#FFFFFF; --ink:#13201E; --muted:#52625E; --line:#D3DCD9;
+  --accent:#0B7A75; --accent-ink:#FFFFFF; --alarm:#D7261E;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Instrument Sans',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1413; --surface:#16201F; --ink:#E6EEEC; --muted:#9DADA8; --line:#2A3836;
+    --accent:#4FD1C5; --accent-ink:#06201D; --alarm:#FF6B61; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1413; --surface:#16201F; --ink:#E6EEEC; --muted:#9DADA8; --line:#2A3836;
+  --accent:#4FD1C5; --accent-ink:#06201D; --alarm:#FF6B61; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1320px;margin:0 auto;padding:20px 16px 40px}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:16px}
+h1{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+@media (max-width:1000px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- Visor ---------- */
+.stage-wrap{overflow-x:auto;border-radius:26px}
+.stage{--u:9px;position:relative;min-width:680px;aspect-ratio:16/9;border-radius:26px;overflow:hidden;background:#16201f;
+  color:#E8F3F1;box-shadow:0 0 0 6px #0b1110, 0 0 0 7px rgba(255,255,255,.12), 0 18px 40px rgba(0,0,0,.28);user-select:none}
+.stage svg#scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(120% 120% at 50% 45%,transparent 55%,rgba(0,0,0,.45) 100%),
+  linear-gradient(115deg,rgba(255,255,255,.05) 0%,transparent 32%)}
+.stage::after{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:26px}
+.stage.alerting::after{box-shadow:inset 0 0 0 5px var(--alarm),inset 0 0 90px rgba(255,59,48,.5);animation:pulse 1.1s ease-in-out infinite}
+.stage.alerting-ack::after{box-shadow:inset 0 0 0 3px #F2B84B,inset 0 0 50px rgba(242,184,75,.22)}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 5px var(--alarm),inset 0 0 20px rgba(255,59,48,.15)}}
+.mark{position:absolute;z-index:3;width:22px;height:22px;border:2px solid rgba(232,243,241,.55);pointer-events:none}
+.mark.tl{left:14px;top:14px;border-right:0;border-bottom:0}
+.mark.tr{right:14px;top:14px;border-left:0;border-bottom:0}
+.mark.bl{left:14px;bottom:14px;border-right:0;border-top:0}
+.mark.br{right:14px;bottom:14px;border-left:0;border-top:0}
+
+.hud{position:absolute;z-index:4;pointer-events:none;font-family:var(--font-mono);font-size:max(10px,calc(var(--u)*1.25));color:#E8F3F1;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.hud-tl{left:calc(var(--u)*3);top:calc(var(--u)*2.4);display:flex;flex-direction:column;gap:2px}
+.hud-tr{right:calc(var(--u)*3);top:calc(var(--u)*2.4);text-align:right;display:flex;flex-direction:column;gap:2px}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;background:#3FD08F;margin-right:.5em;box-shadow:0 0 8px #3FD08F}
+.hud .dim{opacity:.72}
+.hud-bottom{left:calc(var(--u)*3);right:calc(var(--u)*3);bottom:calc(var(--u)*2.2);display:flex;align-items:center;gap:calc(var(--u)*2);
+  background:rgba(8,14,13,.62);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:calc(var(--u)*.7) calc(var(--u)*2);backdrop-filter:blur(4px)}
+.climate{display:flex;align-items:center;gap:.7em;white-space:nowrap}
+.segs{display:flex;gap:2px}
+.seg{width:calc(var(--u)*1.1);height:calc(var(--u)*1.1);min-width:8px;min-height:8px;border-radius:2px;background:#555}
+.hud-bottom .hint{flex:1;text-align:center}
+.hud-bottom .hint b{color:#fff;font-weight:500}
+
+/* alerta */
+.alert{position:absolute;z-index:7;left:calc(var(--u)*2.4);top:calc(var(--u)*7);width:min(58%,560px);background:rgba(120,12,8,.93);border:2px solid #FF5A4F;border-radius:14px;
+  padding:12px 14px;color:#fff;font-family:var(--font-body);font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.alert[hidden]{display:none}
+.alert.is-ack{background:rgba(70,52,10,.93);border-color:#F2B84B}
+.alert-main{display:flex;gap:12px;align-items:flex-start}
+.alert-ico{flex:none;width:34px;height:34px;border-radius:50%;background:#FF5A4F;color:#fff;font-weight:700;display:grid;place-items:center;font-size:20px;font-family:var(--font-display)}
+.alert.is-ack .alert-ico{background:#F2B84B;color:#2b1f00}
+.alert-sev{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.alert-title{font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.2;margin:2px 0}
+.alert-where{opacity:.92}
+.alert-more{margin-left:auto;align-self:flex-start;background:rgba(255,255,255,.16);border:0;border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer;color:#fff}
+.alert-more[hidden]{display:none}
+.alert-steps{margin:10px 0 0;padding:10px 12px 10px 30px;background:rgba(0,0,0,.28);border-radius:10px}
+.alert-steps[hidden]{display:none}
+.alert-steps li{margin:3px 0}
+.alert-steps .tel{font-family:var(--font-mono);font-weight:500;background:rgba(255,255,255,.18);border-radius:6px;padding:0 6px}
+.alert-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn-lens{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn-lens:hover{background:rgba(255,255,255,.22)}
+.btn-lens.primary{background:#fff;color:#4a0b07;border-color:#fff}
+.alert.is-ack .btn-lens.primary{color:#3a2a00}
+
+/* sugerencia grupal */
+.nudge{position:absolute;z-index:5;left:calc(var(--u)*3);bottom:calc(var(--u)*7.6);display:none;align-items:center;gap:10px;background:rgba(10,20,19,.88);
+  border:1px solid rgba(255,255,255,.25);border-left:4px solid #F2994A;border-radius:12px;padding:8px 12px;color:#fff;cursor:pointer;font-size:13px;text-align:left}
+.nudge.show{display:flex}
+.nudge:hover{background:rgba(24,40,38,.95)}
+.nudge small{display:block;opacity:.75}
+
+/* hoja de sugerencias */
+.sheet{position:absolute;z-index:8;right:calc(var(--u)*2.4);top:calc(var(--u)*7);bottom:calc(var(--u)*7.6);width:33%;min-width:262px;display:flex;flex-direction:column;
+  background:rgba(250,252,251,.97);color:#13201E;border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.5);overflow:hidden;font-size:14px}
+.sheet[hidden]{display:none}
+.sheet-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #D3DCD9}
+.avatar{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:17px;color:#0b1211}
+.sheet-head h2{margin:0;font-family:var(--font-display);font-size:18px;line-height:1.15}
+.sheet-head p{margin:0;font-size:12px;color:#52625E}
+.sheet-x{margin-left:auto;border:0;background:#E7EEEC;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:18px;line-height:1;color:#13201E}
+.sheet-body{padding:12px 14px;overflow:auto;flex:1}
+.state-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:600;font-size:13px;color:#0B1211}
+.meter{flex:1;height:8px;border-radius:99px;background:#DCE5E2;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px}
+.conf{font-family:var(--font-mono);font-size:12px;color:#52625E}
+.sheet h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#52625E;margin:12px 0 4px;font-weight:600}
+.sheet ul,.sheet ol{margin:0;padding-left:20px}
+.sheet li{margin:4px 0}
+.avoid{background:#FFF1E0;border-left:3px solid #E58A1F;padding:7px 10px;border-radius:6px;margin:0}
+.caveat{font-size:12px;color:#52625E;margin:12px 0 0}
+.sheet-foot{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #D3DCD9;background:#F0F5F3}
+.sheet-foot button{flex:1;border-radius:10px;padding:8px 10px;cursor:pointer;font-weight:600;border:1px solid #B9C7C3;background:#fff;color:#13201E}
+.sheet-foot button.primary{background:#0B7A75;border-color:#0B7A75;color:#fff}
+.names{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.names button{border:1px solid #B9C7C3;background:#fff;border-radius:999px;padding:3px 10px;cursor:pointer;font-size:13px;color:#13201E}
+.flash{animation:flash 1.2s ease-out}
+@keyframes flash{from{background:#FFF3B8}to{background:transparent}}
+
+@media (max-width:700px){
+  .sheet{position:fixed;left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:72vh;z-index:50}
+}
+
+/* ---------- Escena SVG ---------- */
+.ov{cursor:pointer;outline:none}
+.ov .brk{fill:none;stroke-width:2.6px;stroke-linecap:square;vector-effect:non-scaling-stroke}
+.ov .hit{fill:transparent;stroke:none}
+.ov:hover .brk,.ov.sel .brk{stroke-width:4.4px}
+.ov:focus-visible .hit{stroke:#fff;stroke-width:2px;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.ov .ring{fill:none;stroke:#FF5A4F;stroke-width:3px;stroke-dasharray:7 5;vector-effect:non-scaling-stroke;display:none}
+.ov.alarm .ring{display:block;animation:ring 1s linear infinite}
+.ov.alarm .brk{animation:blink 1s steps(2,end) infinite}
+@keyframes ring{to{stroke-dashoffset:-24}}
+@keyframes blink{50%{opacity:.35}}
+.chip-t{font-family:var(--font-mono);font-size:15px;font-weight:500;pointer-events:none}
+.breath{animation:breath 4.2s ease-in-out infinite}
+@keyframes breath{50%{transform:translateY(-2.2px)}}
+.breath.shake{animation:shake .22s linear infinite}
+@keyframes shake{25%{transform:translate(-4px,1px)}75%{transform:translate(4px,-1px)}}
+.head{transform-box:view-box;transform-origin:0px 30px;transition:transform .8s cubic-bezier(.3,.7,.3,1)}
+.pup{transition:transform .5s ease}
+.galert{display:none;pointer-events:none}
+.galert.on{display:block}
+.galert .brk2{fill:rgba(255,59,48,.08);stroke:#FF5A4F;stroke-width:3px;stroke-dasharray:9 6;animation:ring 1s linear infinite}
+#smoke{opacity:0;transition:opacity 1.2s}
+#smoke.on{opacity:1}
+#smoke circle{animation:drift 6s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(-26px,16px)}}
+#intruder{opacity:0;transition:opacity .8s}
+#intruder.on{opacity:1}
+
+/* ---------- Panel de pruebas ---------- */
+aside.side{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.card h2{font-family:var(--font-display);font-size:16px;margin:0 0 8px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.seg-btns{display:flex;gap:6px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
+.pill[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.alert-btns{display:grid;gap:6px}
+.abtn{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);background:transparent;border-radius:10px;padding:8px 10px;cursor:pointer}
+.abtn:hover{border-color:var(--alarm)}
+.abtn[disabled]{opacity:.5;cursor:default}
+.sev{flex:none;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:2px 6px;color:#fff}
+.sev.c{background:#C62828}.sev.a{background:#C2570C}.sev.m{background:#7A5C00}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:0;padding:0;list-style:none}
+.legend li{display:flex;align-items:center;gap:8px;font-size:14px}
+.legend .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.legend .n{margin-left:auto;font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+.log{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px;max-height:190px;overflow:auto}
+.log li{display:flex;gap:8px}
+.log time{font-family:var(--font-mono);color:var(--muted);flex:none;font-size:12px}
+.log .k-alert{color:var(--alarm);font-weight:600}
+.copy{margin-top:8px;border:1px solid var(--line);background:transparent;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px}
+.note{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+/* ---- agregados: cámara, métricas y estados (misma paleta que Lumen alumnos) ---- */
+.stage canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:none;background:#06060b}
+.stage.cam canvas#cv{display:block}
+.stage.cam #demoLayer{display:none}
+.stage.cam::before{background:radial-gradient(120% 120% at 50% 45%,transparent 60%,rgba(0,6,14,.55) 100%)}
+.ov .chip-m{font-family:var(--font-mono);font-size:13px;pointer-events:none}
+.bars{pointer-events:none}
+.src-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin:8px 0;color:var(--ink)}
+.check input{margin-top:3px;width:16px;height:16px;flex:none}
+.msg{font-size:13px;color:var(--muted);min-height:1.4em;margin:6px 0 0}
+.msg.err{color:var(--alarm)}
+.btn{border:1px solid var(--line);background:transparent;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn[disabled]{opacity:.5;cursor:default}
+.legend2{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:0 0 10px;padding:0;list-style:none}
+.legend2 li{display:flex;align-items:center;gap:8px;font-size:14px}
+.legend2 .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.legend2 .n{margin-left:auto;font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+.sub-h{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6px 0;font-weight:600}
+.met{display:grid;grid-template-columns:78px 1fr 36px;gap:8px;align-items:center;margin:4px 0;font-size:13px}
+.met .tr{height:8px;border-radius:99px;background:#DCE5E2;overflow:hidden}
+.met .tr i{display:block;height:100%;border-radius:99px;transition:width .3s}
+.met b{font-family:var(--font-mono);font-weight:500;text-align:right;color:#52625E;font-size:12px}
+.emos{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px}
+.emos span{font-size:12px;border:1px solid #C9D5D1;border-radius:999px;padding:2px 8px;font-family:var(--font-mono);color:#13201E}
+.emos span.on{font-weight:600;color:#0B1211}
+.tag-sim{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;border:1px solid rgba(255,255,255,.5);border-radius:6px;padding:1px 6px;margin-left:6px}
+.sheet h3.first{margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Lumen docentes</h1>
+    <p class="sub">Los lentes vistos por la profesora. Mismas emociones, estados y medidas que Lumen alumnos.</p>
+  </header>
+
+  <div class="grid">
+    <main>
+      <div class="stage-wrap">
+        <div class="stage" id="stage">
+          <canvas id="cv" width="1200" height="675"></canvas>
+          <video id="video" playsinline muted style="display:none"></video>
+          <svg id="scene" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid meet" aria-hidden="false"><g id="demoLayer"></g><g id="ovLayer"></g></svg>
+          <span class="mark tl"></span><span class="mark tr"></span><span class="mark bl"></span><span class="mark br"></span>
+
+          <div class="hud hud-tl">
+            <div><span class="dot"></span><span id="hudStatus">LENTES ACTIVOS · DEMO</span></div>
+            <div class="dim">4.º B · Lengua · Prof. Ana Ruiz</div>
+          </div>
+          <div class="hud hud-tr">
+            <div id="hudCount">10 alumnos detectados</div>
+            <div class="dim" id="hudAlerts">0 alertas · <span id="hudFps">0 fps</span></div>
+          </div>
+
+          <div class="alert" id="alert" hidden role="alert" aria-live="assertive">
+            <div class="alert-main">
+              <span class="alert-ico" aria-hidden="true">!</span>
+              <div>
+                <div class="alert-sev" id="alertSev"></div>
+                <div class="alert-title" id="alertTitle"></div>
+                <div class="alert-where" id="alertWhere"></div>
+              </div>
+              <button class="alert-more" id="alertMore" hidden></button>
+            </div>
+            <ol class="alert-steps" id="alertSteps" hidden></ol>
+            <div class="alert-actions">
+              <button class="btn-lens" id="btnSteps">Ver protocolo</button>
+              <button class="btn-lens primary" id="btnAck">Enterado</button>
+              <button class="btn-lens" id="btnFalse">Falso positivo</button>
+            </div>
+          </div>
+
+          <button class="nudge" id="nudge" type="button"></button>
+
+          <aside class="sheet" id="sheet" hidden role="dialog" aria-labelledby="sheetTitle">
+            <div class="sheet-head">
+              <div class="avatar" id="shAvatar"></div>
+              <div>
+                <h2 id="sheetTitle"></h2>
+                <p id="shSub"></p>
+              </div>
+              <button class="sheet-x" id="shClose" aria-label="Cerrar sugerencias">×</button>
+            </div>
+            <div class="sheet-body" id="shBody"></div>
+            <div class="sheet-foot" id="shFoot"></div>
+          </aside>
+
+          <div class="hud hud-bottom">
+            <div class="climate"><span>CLIMA</span><span class="segs" id="segs"></span></div>
+            <div class="hint"><b>Doble click</b> en un recuadro para ver sugerencias</div>
+            <div class="dim">estimación, no diagnóstico</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="side">
+      <section class="card">
+        <h2>Fuente de video</h2>
+        <div class="src-row">
+          <button class="pill" id="srcDemo" aria-pressed="true">Modo demo</button>
+          <button class="pill" id="srcCam" aria-pressed="false">Cámara</button>
+        </div>
+        <label class="check"><input type="checkbox" id="consent"><span>Entiendo que el video se procesa en este dispositivo y no se guarda ni se envía. Las personas filmadas están informadas.</span></label>
+        <label class="check"><input type="checkbox" id="mirror" checked><span>Imagen en espejo</span></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn primary" id="btnStartCam" disabled>Activar cámara</button>
+          <button class="btn" id="btnRecal" disabled>Recalibrar</button>
+        </div>
+        <p class="msg" id="camMsg" role="status">Con cámara, cada rostro se calibra solo durante 4 s. Pedile al grupo cara neutra al empezar.</p>
+      </section>
+
+      <section class="card">
+        <h2>Momento de clase <span class="note">(solo demo)</span></h2>
+        <div class="seg-btns" id="ctxBtns"></div>
+      </section>
+
+      <section class="card">
+        <h2>Probar alertas <span class="note">(simuladas)</span></h2>
+        <div class="alert-btns" id="alertBtns"></div>
+        <p class="note" style="margin-top:8px">Desmayo y angustia sostenida también se detectan solas desde el rostro: cabeza caída con ojos cerrados 5 s, o tristeza sostenida 6 s.</p>
+      </section>
+
+      <section class="card">
+        <h2>Estados y ánimo en el aula</h2>
+        <div class="sub-h">Estado</div>
+        <ul class="legend2" id="legState"></ul>
+        <div class="sub-h">Ánimo</div>
+        <ul class="legend2" id="legMood"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Registro de la sesión</h2>
+        <ul class="log" id="log"><li><time>--:--:--</time><span>Todavía no hay eventos.</span></li></ul>
+        <button class="copy" id="copyLog">Copiar registro</button>
+        <span class="note" id="copyMsg" role="status"></span>
+      </section>
+
+      <details class="card">
+        <summary><b>Cómo se calcula</b></summary>
+        <p style="margin-top:8px"><b>Atención:</b> giro de cabeza, mirada y ojos cerrados. <b>Fatiga:</b> PERCLOS 30 s, bostezos, cabeza caída, tensión. <b>Frustración:</b> ceño, labios apretados, ojos entrecerrados. <b>Confusión:</b> cejas internas arriba, asimetría, cabeza ladeada. Todo contra la calibración neutra de cada rostro. Ánimo: Neutral, Contento, Tristeza, Enojo, Sorpresa. Es el mismo cálculo que usa Lumen alumnos.</p>
+      </details>
+    </aside>
+  </div>
+</div>
+
+<script type="module">
+const NS='http://www.w3.org/2000/svg';
+const $=s=>document.querySelector(s);
+const el=(tag,attrs,parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;};
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const avg=(...a)=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
+const pct=v=>Math.round(v*100);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ================= paleta y vocabulario (igual que Lumen alumnos) ================= */
+const STATE_COL={Concentrado:'#6df7d0',Atento:'#6df7d0',Frustrado:'#ff5a7a',Confundido:'#a78bff',Fatigado:'#ffb347','Distraído':'#7f8fb3'};
+const MOOD_COL={Neutral:'#968fa6',Contento:'#ffd98a',Tristeza:'#7aa8ff',Enojo:'#ff5a7a',Sorpresa:'#6df7d0'};
+const MOOD_ADJ={Neutral:'neutral',Contento:'contento',Tristeza:'desanimado',Enojo:'tenso',Sorpresa:'sorprendido'};
+const MOODS=['Neutral','Contento','Tristeza','Enojo','Sorpresa'];
+const STATES=['Concentrado','Atento','Distraído','Fatigado','Frustrado','Confundido'];
+const MET=[['att','ATN','#6df7d0','Atención'],['fat','FAT','#ffb347','Fatiga'],['fru','FRU','#ff5a7a','Frustración'],['con','CON','#a78bff','Confusión']];
+const ALARM='#FF5A4F';
+
+function stateWord(m){return m.fru>.5?'Frustrado':m.con>.5?'Confundido':m.fat>.5?'Fatigado':m.att<.45?'Distraído':m.att>.75?'Concentrado':'Atento';}
+function auraColor(T){const sw=T.state;if((sw==='Concentrado'||sw==='Atento')&&T.mood==='Contento')return '#ffd98a';return STATE_COL[sw]||'#6df7d0';}
+function neutralPct(T){const e=T.emoS;const mx=Math.max(e.Contento,e.Tristeza,e.Enojo,e.Sorpresa);return 1-clamp(mx*1.6);}
+
+/* ================= pose, rasgos y métricas (copiado de Lumen alumnos) ================= */
+function poseFromLm(lm){
+  const a=lm[33],b=lm[263],n=lm[1];
+  const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,ed=Math.hypot(b.x-a.x,b.y-a.y)||1e-6;
+  return {yaw:(n.x-mx)/ed,pitch:(n.y-my)/ed,roll:Math.atan2(b.y-a.y,b.x-a.x)};
+}
+const BASE_KEYS=['outerUp','cheek','shrug','upLip','dimple','browDown','innerUp','squint','press','frown','sneer','browAsym','smile','wide','jaw','gazeH','gazeV','yaw','pitch','roll'];
+function features(bs,pose){
+  const g=k=>bs[k]||0;
+  return {
+    blink:avg(g('eyeBlinkLeft'),g('eyeBlinkRight')),smile:avg(g('mouthSmileLeft'),g('mouthSmileRight')),frown:avg(g('mouthFrownLeft'),g('mouthFrownRight')),
+    browDown:avg(g('browDownLeft'),g('browDownRight')),
+    browAsym:Math.abs(g('browDownLeft')-g('browDownRight'))+Math.abs(g('browOuterUpLeft')-g('browOuterUpRight')),
+    innerUp:g('browInnerUp'),squint:avg(g('eyeSquintLeft'),g('eyeSquintRight')),wide:avg(g('eyeWideLeft'),g('eyeWideRight')),
+    jaw:g('jawOpen'),press:avg(g('mouthPressLeft'),g('mouthPressRight')),sneer:avg(g('noseSneerLeft'),g('noseSneerRight')),
+    outerUp:avg(g('browOuterUpLeft'),g('browOuterUpRight')),cheek:avg(g('cheekSquintLeft'),g('cheekSquintRight')),shrug:avg(g('mouthShrugLower'),g('mouthShrugUpper')),upLip:avg(g('mouthUpperUpLeft'),g('mouthUpperUpRight')),dimple:avg(g('mouthDimpleLeft'),g('mouthDimpleRight')),
+    gazeH:((g('eyeLookInLeft')+g('eyeLookOutRight'))-(g('eyeLookOutLeft')+g('eyeLookInRight')))/2,
+    gazeV:avg(g('eyeLookUpLeft'),g('eyeLookUpRight'))-avg(g('eyeLookDownLeft'),g('eyeLookDownRight')),
+    yaw:pose.yaw,pitch:pose.pitch,roll:pose.roll
+  };
+}
+const SIGNED=new Set(['yaw','pitch','roll','gazeH','gazeV']);
+function adjust(f,base){
+  const o={blink:f.blink};
+  BASE_KEYS.forEach(k=>{const d=f[k]-(base[k]||0);o[k]=SIGNED.has(k)?d:Math.max(0,d);});
+  return o;
+}
+function compute(T,f,now,dt){
+  const a=adjust(f,T.base);T.a=a;
+  const happy=clamp(a.smile*2.6+a.cheek*.8+a.dimple*.5);
+  let anger=clamp(a.browDown*1.6+a.sneer*1.0+a.press*1.1+a.squint*.7);
+  if(a.press+a.sneer+a.upLip<.08)anger*=.5;
+  anger*=1-clamp(a.innerUp*1.3)*.8;
+  let sad=clamp(a.frown*1.9+a.shrug*1.3+(a.frown+a.shrug>.1?a.innerUp*.7:0));
+  let surprise=clamp(a.wide*1.7+a.outerUp*1.2+a.innerUp*.4+a.jaw*1.0);
+  if(a.wide<.08&&a.jaw<.2)surprise*=.25;
+  anger=clamp(anger-happy*.9);sad=clamp(sad-happy*.9);surprise=clamp(surprise-happy*.3);
+  const rawE={Contento:happy,Tristeza:sad,Enojo:anger,Sorpresa:surprise},ke=1-Math.exp(-dt*6);
+  for(const k in rawE)T.emoS[k]+=(rawE[k]-T.emoS[k])*ke;
+  const emo=T.emoS;
+  let top='Neutral',tv=.28;for(const k in emo)if(emo[k]>tv){tv=emo[k];top=k;}
+  if(T.mood!==top&&T.mood!=='Neutral'&&emo[T.mood]>tv-.08)top=T.mood;
+  T.mood=top;
+  const eyesOpen=f.blink<.4?1:0;
+  const dev=.55*clamp(Math.abs(a.yaw)/.35)+.25*clamp(Math.abs(a.pitch)/.35)+.25*clamp(Math.abs(a.gazeH)/.5)*eyesOpen;
+  const att=1-clamp(dev)-(f.blink>.5?.15:0);
+  const fru=clamp(1.6*(.4*a.browDown+.2*a.squint+.2*a.press+.1*a.frown+.1*a.sneer));
+  const con=clamp(1.5*(.45*a.innerUp+.3*a.browAsym+.15*a.squint)+.3*clamp(Math.abs(a.roll)/.3));
+  T.perclos.push({t:now,c:f.blink>.5});while(T.perclos.length&&now-T.perclos[0].t>30000)T.perclos.shift();
+  const perclos=T.perclos.length?T.perclos.filter(x=>x.c).length/T.perclos.length:0;
+  const yawning=a.jaw>.45&&a.wide<.3&&a.smile<.3;
+  if(yawning){if(T.yawStart==null)T.yawStart=now;else if(now-T.yawStart>700&&!T.yawCounted){T.yawns.push(now);T.yawCounted=true;}}
+  else{T.yawStart=null;T.yawCounted=false;}
+  while(T.yawns.length&&now-T.yawns[0]>300000)T.yawns.shift();
+  const fatRaw=clamp(.5*clamp(perclos/.2)+.3*clamp(T.yawns.length/2)+.2*clamp(Math.max(0,a.pitch)/.25)+.2*(a.press+a.browDown)/2);
+  const k=1-Math.exp(-dt*3.5),kf=1-Math.exp(-dt*.8);
+  T.m.att+=(att-T.m.att)*k;T.m.fru+=(fru-T.m.fru)*k;T.m.con+=(con-T.m.con)*k;T.m.fat+=(fatRaw-T.m.fat)*kf;
+}
+
+/* ================= contenido pedagógico ================= */
+const TIPS={
+  Concentrado:{senales:['Mirada sostenida hacia vos','Postura erguida y pocos gestos de tensión'],
+    acciones:['Pedile que explique con sus palabras lo último, así sirve de modelo al grupo.','Ofrecele una pregunta de mayor desafío.','Apoyate en él sin sobrecargarlo.'],
+    evitar:'Dar por hecho que entendió solo porque te mira.'},
+  Atento:{senales:['Mirada mayormente hacia el frente','Atención estable'],
+    acciones:['Pedile una respuesta corta para confirmar que sigue el hilo.','Ofrecele un paso más difícil de la misma tarea.','Reconocé su participación con una devolución concreta.'],
+    evitar:'Dejarlo sin devolución durante toda la clase.'},
+  'Distraído':{senales:['Mirada fuera del foco de la clase','Cabeza girada hacia un costado'],
+    acciones:['Explicá cerca del alumno: moverte por el aula alcanza muchas veces.','Hacele una pregunta abordable, por su nombre, para volver a captar su atención.','Dividí la actividad en tramos con un objetivo visible en el pizarrón.'],
+    evitar:'Retarlo frente al grupo. Suele sumar distracción.',
+    grupo:'Varios alumnos parecen distraídos. Hacé una pausa activa de un minuto y retomá con un objetivo claro.'},
+  Fatigado:{senales:['Parpadeos largos y frecuentes','Cabeza que cae o bostezos'],
+    acciones:['Proponé una pausa activa de un minuto: pararse, estirarse, tomar agua.','Pasá a una tarea más corta o con movimiento.','Revisá si hace falta ventilar el aula o bajar el ritmo.'],
+    evitar:'Seguir sumando contenido nuevo sin una pausa.',
+    grupo:'Varios alumnos muestran cansancio. Hacé una pausa activa de un minuto antes de seguir.'},
+  Frustrado:{senales:['Cejas bajas y juntas, labios apretados','Ojos entrecerrados'],
+    acciones:['Reconocé el esfuerzo en privado: «Veo que esto te cuesta, lo vemos juntos».','Mostrá un ejemplo resuelto parecido y pedile que adapte el procedimiento al suyo.','Bajá la dificultad un escalón y volvé a subirla de a poco.'],
+    evitar:'Darle la respuesta final sin explicar el procedimiento.',
+    grupo:'Varios alumnos parecen frustrados. La tarea puede ser demasiado difícil: simplificala y modelá el primer paso para todos.'},
+  Confundido:{senales:['Cejas internas arriba y cabeza ladeada','Gesto asimétrico en las cejas'],
+    acciones:['Volvé al último paso y resolvelo en voz alta con un ejemplo concreto.','Hacé una pregunta de control como «¿Qué haríamos primero acá?» y pedí respuesta a varios alumnos.','Si se repite, dividí la consigna en pasos más cortos y escribilos en el pizarrón.'],
+    evitar:'Preguntar «¿entendieron?». Suelen decir que sí por compromiso.',
+    grupo:'Varios alumnos parecen confundidos. Repasá el último concepto con un ejemplo resuelto antes de avanzar.'},
+  Tristeza:{grupo:'Varios alumnos se ven desanimados. Proponé una actividad breve y colaborativa para cambiar el clima.'}
+};
+const MOOD_TIPS={
+  Tristeza:'Se lo ve desanimado. Acercate en privado, preguntale cómo está y ofrecele una tarea de entrada sencilla.',
+  Enojo:'Se lo ve tenso. Bajá el tono, dale unos minutos y evitá confrontar delante del grupo.',
+  Sorpresa:'Se lo ve sorprendido. Preguntale qué le llamó la atención: puede haber un dato nuevo o inesperado.',
+  Contento:'El ánimo es bueno. Aprovechalo para una actividad colaborativa.'
+};
+const GROUP_PLURAL={Frustrado:'frustrados',Confundido:'confundidos',Fatigado:'fatigados','Distraído':'distraídos',Tristeza:'desanimados'};
+
+const ALERTS={
+  desmayo:{short:'Desmayo',title:'Posible desmayo o caída',sev:'Crítica',rank:0,n:1,demo:[6],face:'desmayo',signal:'Cabeza caída y ojos cerrados durante 5 s.',
+    steps:['Acercate y fijate si responde a tu voz.','Si no responde, llamá al <span class="tel">107</span> (emergencias médicas).','Acostalo con las piernas elevadas y aflojale la ropa.','Avisá a dirección y a la familia.']},
+  asfixia:{short:'Atragantamiento',title:'Posible atragantamiento o reacción alérgica',sev:'Crítica',rank:0,n:1,demo:[8],face:'asfixia',
+    steps:['Preguntale si puede hablar o toser.','Si no puede respirar ni hablar, llamá al <span class="tel">107</span> y pedí ayuda a otro adulto.','Aplicá el protocolo de primeros auxilios de la escuela si tenés la capacitación.','Si tiene un plan médico con autoinyector de adrenalina, seguilo.']},
+  humo:{short:'Humo',title:'Humo o fuego en el aula',sev:'Crítica',rank:0,n:0,demo:[],global:'humo',where:'Pared del fondo, lado derecho',
+    steps:['Activá la alarma y evacuá por la ruta señalizada.','Llamá al <span class="tel">100</span> (Bomberos).','Contá a los alumnos en el punto de encuentro.','No uses ascensores.']},
+  pelea:{short:'Forcejeo',title:'Forcejeo entre alumnos',sev:'Alta',rank:1,n:2,demo:[4,5],face:'agresion',shake:true,
+    steps:['Poné distancia: llamalos por su nombre y pedí que frenen.','Si hay golpes, no te interpongas solo: pedí ayuda a otro adulto.','Separalos en espacios distintos y avisá a dirección.','Dejá registro de lo que pasó.']},
+  intruso:{short:'Persona sin registro',title:'Persona no registrada en la puerta',sev:'Alta',rank:1,n:0,demo:[],global:'puerta',where:'Puerta del aula',
+    steps:['No la confrontes a solas.','Avisá a dirección o a preceptoría.','Si hay una amenaza, llamá al <span class="tel">911</span> y resguardá al grupo.','Anotá la hora y una descripción.']},
+  angustia:{short:'Angustia',title:'Angustia sostenida en un alumno',sev:'Media',rank:2,n:1,demo:[9],face:'ansioso',signal:'Tristeza sostenida durante 6 s.',
+    steps:['Hablale en privado y sin presión.','Ofrecele acompañarlo al equipo de orientación.','Evitá preguntarle frente al grupo.','Dejá constancia para el seguimiento.']}
+};
+const ALERT_ORDER=['desmayo','asfixia','humo','pelea','intruso','angustia'];
+
+/* ================= escena demo ================= */
+const scene=$('#scene'),demoLayer=$('#demoLayer'),ovLayer=$('#ovLayer'),stage=$('#stage');
+const FACE={
+  atento:{m:'M-9,20 Q0,23 9,20',lo:0,li:0,ri:0,ro:0,ry:6,lid:0,gx:0,gy:-1,rot:0,ty:0,tx:0},
+  contento:{m:'M-14,16 Q0,33 14,16',lo:-3,li:-3,ri:-3,ro:-3,ry:5.5,lid:0,gx:0,gy:0,rot:0,ty:0,tx:0},
+  confundido:{m:'M-10,23 Q-4,17 1,22 T11,21',lo:-2,li:-5,ri:3,ro:2,ry:6,lid:0,gx:-3,gy:-2,rot:9,ty:0,tx:0},
+  aburrido:{m:'M-8,23 L8,23',lo:3,li:3,ri:3,ro:3,ry:6,lid:5,gx:0,gy:4,rot:-3,ty:7,tx:0},
+  frustrado:{m:'M-12,27 Q0,16 12,27',lo:-3,li:5,ri:5,ro:-3,ry:6,lid:2.5,gx:0,gy:1,rot:0,ty:0,tx:0},
+  ansioso:{m:'M-9,25 Q0,19 9,25',lo:3,li:-6,ri:-6,ro:3,ry:7,lid:0,gx:-4,gy:3,rot:0,ty:2,tx:0},
+  distraido:{m:'M-8,21 Q0,24 8,21',lo:0,li:0,ri:0,ro:0,ry:6,lid:0,gx:8,gy:0,rot:-9,ty:0,tx:8},
+  sorpresa:{m:'M-6,21 Q0,33 6,21 Z',lo:-6,li:-6,ri:-6,ro:-6,ry:8.5,lid:0,gx:0,gy:0,rot:0,ty:0,tx:0},
+  desmayo:{m:'M-7,22 Q0,29 7,22 Z',lo:2,li:2,ri:2,ro:2,ry:6,lid:13,gx:0,gy:0,rot:42,ty:18,tx:-6},
+  asfixia:{m:'M-7,19 Q0,37 7,19 Z',lo:-5,li:-8,ri:-8,ro:-5,ry:8.5,lid:0,gx:0,gy:0,rot:0,ty:0,tx:0},
+  agresion:{m:'M-12,22 Q0,29 12,22 Z',lo:-4,li:6,ri:6,ro:-4,ry:6,lid:2.5,gx:0,gy:0,rot:0,ty:0,tx:0}
+};
+function faceKeyFor(T){
+  if(T.alert)return ALERTS[T.alert].face||'atento';
+  const s=T.state;
+  if(s==='Distraído')return 'distraido';
+  if(s==='Fatigado')return 'aburrido';
+  if(s==='Frustrado')return 'frustrado';
+  if(s==='Confundido')return 'confundido';
+  if(T.mood==='Contento')return 'contento';
+  if(T.mood==='Tristeza')return 'ansioso';
+  if(T.mood==='Sorpresa')return 'sorpresa';
+  if(T.mood==='Enojo')return 'frustrado';
+  return 'atento';
+}
+function setFace(T,key){
+  if(!T.fig||T.fig.key===key)return;T.fig.key=key;
+  const F=FACE[key],e=T.fig;
+  e.mouth.setAttribute('d',F.m);e.mouth.setAttribute('fill-opacity',F.m.indexOf('Z')>-1?.85:0);
+  e.brL.setAttribute('d',`M-23,${-12+F.lo} L-5,${-12+F.li}`);e.brR.setAttribute('d',`M5,${-12+F.ri} L23,${-12+F.ro}`);
+  e.eyeL.setAttribute('ry',F.ry);e.eyeR.setAttribute('ry',F.ry);
+  const lh=F.lid?F.lid+4:0;e.lidL.setAttribute('height',lh);e.lidR.setAttribute('height',lh);
+  const p=`translate(${F.gx*.5}px,${F.gy*.5}px)`;e.pupL.style.transform=p;e.pupR.style.transform=p;
+  e.head.style.transform=`translate(${F.tx}px,${F.ty}px) rotate(${F.rot}deg)`;
+}
+(function buildRoom(){
+  const L=demoLayer;
+  const defs=el('defs',{},L);
+  const wg=el('linearGradient',{id:'wall',x1:0,y1:0,x2:0,y2:1},defs);el('stop',{offset:0,'stop-color':'#34504f'},wg);el('stop',{offset:1,'stop-color':'#243635'},wg);
+  const fg=el('linearGradient',{id:'floor',x1:0,y1:0,x2:0,y2:1},defs);el('stop',{offset:0,'stop-color':'#2a3b3a'},fg);el('stop',{offset:1,'stop-color':'#141d1c'},fg);
+  const bl=el('filter',{id:'blur',x:'-50%',y:'-50%',width:'200%',height:'200%'},defs);el('feGaussianBlur',{stdDeviation:14},bl);
+  el('rect',{x:0,y:0,width:1200,height:300,fill:'url(#wall)'},L);
+  el('rect',{x:0,y:300,width:1200,height:375,fill:'url(#floor)'},L);
+  el('rect',{x:0,y:292,width:1200,height:10,fill:'#1b2a29'},L);
+  for(let i=-4;i<=12;i++)el('line',{x1:600,y1:300,x2:i*100,y2:675,stroke:'rgba(255,255,255,.045)','stroke-width':2},L);
+  [420,590,760].forEach(x=>{
+    el('rect',{x:x,y:60,width:140,height:150,rx:4,fill:'#a9cfd2',opacity:.35,stroke:'#14201f','stroke-width':6},L);
+    el('line',{x1:x+70,y1:60,x2:x+70,y2:210,stroke:'#14201f','stroke-width':5},L);
+    el('line',{x1:x,y1:135,x2:x+140,y2:135,stroke:'#14201f','stroke-width':5},L);
+  });
+  el('circle',{cx:1050,cy:120,r:36,fill:'#e9efee',stroke:'#14201f','stroke-width':5,opacity:.85},L);
+  el('line',{x1:1050,y1:120,x2:1050,y2:98,stroke:'#14201f','stroke-width':3},L);
+  el('line',{x1:1050,y1:120,x2:1066,y2:128,stroke:'#14201f','stroke-width':3},L);
+  el('rect',{x:240,y:80,width:110,height:80,fill:'#d9c27a',opacity:.55,rx:3},L);
+  el('rect',{x:34,y:70,width:122,height:236,fill:'#4a3a2e',stroke:'#14201f','stroke-width':6},L);
+  el('rect',{x:52,y:92,width:86,height:80,fill:'#5a493b'},L);
+  el('circle',{cx:132,cy:200,r:6,fill:'#c9b68a'},L);
+  const intr=el('g',{id:'intruder'},L);
+  el('ellipse',{cx:96,cy:150,rx:17,ry:20,fill:'#6d5a4b'},intr);
+  el('path',{d:'M58,300 C58,210 70,176 96,176 C122,176 134,210 134,300 Z',fill:'#222a33'},intr);
+  const smoke=el('g',{id:'smoke',filter:'url(#blur)'},L);
+  [[1010,110,60],[1090,150,70],[960,170,50],[1060,70,50],[1130,100,55],[1000,230,45]].forEach((c,i)=>{const ci=el('circle',{cx:c[0],cy:c[1],r:c[2],fill:'#bfc6c4',opacity:.78},smoke);ci.style.animationDelay=(-i*1.1)+'s';});
+  const gH=el('g',{id:'g-humo',class:'galert'},L);
+  el('rect',{x:880,y:30,width:300,height:250,rx:10,class:'brk2'},gH);
+  el('rect',{x:880,y:4,width:212,height:24,rx:5,fill:ALARM},gH);el('text',{x:890,y:21,class:'chip-t',fill:'#fff'},gH).textContent='ALERTA · Humo o fuego';
+  const gP=el('g',{id:'g-puerta',class:'galert'},L);
+  el('rect',{x:24,y:56,width:146,height:258,rx:10,class:'brk2'},gP);
+  el('rect',{x:24,y:30,width:286,height:24,rx:5,fill:ALARM},gP);el('text',{x:34,y:47,class:'chip-t',fill:'#fff'},gP).textContent='ALERTA · Persona sin registro';
+})();
+
+const NAMES=['Lucas','Martina','Joaquín','Sofía','Tomás','Valentina','Mateo','Camila','Benjamín','Julieta'];
+const ROWS=[
+  {y:250,s:.62,xs:[330,540,750,960],label:'Tercera fila'},
+  {y:360,s:.8,xs:[430,640,850],label:'Segunda fila'},
+  {y:492,s:1,xs:[310,620,930],label:'Primera fila'}
+];
+const SKIN=['#E8B796','#C98F6B','#F0C7A5','#9B6B4D','#DDAA85'],HAIR=['#2b1d16','#5a3a22','#1b1b1f','#8a5a2b','#3b2a1f'],SHIRT=['#5B7DB1','#C46B6B','#6BA58A','#D6A24A','#8C7AB8','#4F9AA8'];
+const PRESETS={
+  'Concentrado':{bs:{browDownLeft:.12,browDownRight:.12,eyeSquintLeft:.1,eyeSquintRight:.1},pose:{yaw:0,pitch:0,roll:0},blink:.05},
+  'Distraído':{bs:{eyeLookOutLeft:.5,eyeLookInRight:.5},pose:{yaw:.5,pitch:0,roll:0},blink:.05},
+  'Fatigado':{bs:{jawOpen:.05},pose:{yaw:0,pitch:.28,roll:.05},blink:.55,yawn:true},
+  'Frustrado':{bs:{browDownLeft:.75,browDownRight:.7,mouthPressLeft:.55,mouthPressRight:.55,eyeSquintLeft:.45,eyeSquintRight:.45,mouthFrownLeft:.3,mouthFrownRight:.3},pose:{yaw:0,pitch:.05,roll:0},blink:.05},
+  'Confundido':{bs:{browInnerUp:.65,browDownLeft:.45,browOuterUpRight:.45,eyeSquintLeft:.2},pose:{yaw:.05,pitch:0,roll:.28},blink:.05},
+  'Contento':{bs:{mouthSmileLeft:.8,mouthSmileRight:.8,cheekSquintLeft:.4,cheekSquintRight:.4},pose:{yaw:0,pitch:0,roll:0},blink:.05},
+  'Triste':{bs:{mouthFrownLeft:.65,mouthFrownRight:.65,browInnerUp:.5},pose:{yaw:0,pitch:.12,roll:0},blink:.1},
+  'Sorprendido':{bs:{eyeWideLeft:.8,eyeWideRight:.8,jawOpen:.5,browInnerUp:.8},pose:{yaw:0,pitch:0,roll:0},blink:0}
+};
+const START=['Concentrado','Confundido','Fatigado','Concentrado','Confundido','Contento','Distraído','Confundido','Concentrado','Frustrado'];
+const CONTEXTS={
+  explicacion:{label:'Explicación',w:{'Concentrado':35,'Confundido':18,'Fatigado':14,'Distraído':15,'Contento':8,'Frustrado':5,'Triste':3,'Sorprendido':2}},
+  practica:{label:'Práctica',w:{'Concentrado':30,'Confundido':20,'Frustrado':18,'Contento':12,'Distraído':10,'Fatigado':5,'Triste':3,'Sorprendido':2}},
+  evaluacion:{label:'Evaluación',w:{'Concentrado':30,'Frustrado':15,'Confundido':14,'Fatigado':10,'Distraído':8,'Triste':8,'Sorprendido':5,'Contento':2}}
+};
+
+/* ================= estado global ================= */
+const S={mode:'demo',tracks:[],seq:0,stream:null,landmarker:null,lastVT:-1,fps:0,frames:0,fpsT:0,ctx:'explicacion',t0:performance.now()};
+let active=[],alertSeq=0,viewIdx=0,sel=null,sheetMode=null,logLines=[];
+
+function newTrack(name){
+  return {id:S.seq++,name:name,base:{},calib:null,m:{att:1,fat:0,fru:0,con:0},emoS:{Contento:0,Tristeza:0,Enojo:0,Sorpresa:0},mood:'Neutral',
+    perclos:[],yawns:[],yawStart:null,yawCounted:false,since:{},cool:{},state:'Atento',stateSince:performance.now(),alert:null,
+    box:{x:0,y:0,w:100,h:100},ov:null,lastSeen:performance.now(),lastT:performance.now(),a:null,f:null,demo:false,fig:null};
+}
+
+function buildDemoStudents(){
+  let id=0;
+  ROWS.forEach((row,ri)=>{row.xs.forEach(x=>{
+    const T=newTrack(NAMES[id]);T.demo=true;T.row=ri;T.preset=START[id];T.cur={bs:{},pose:{yaw:0,pitch:0,roll:0}};T.blinkT=1+id*.4;
+    const skin=SKIN[id%5],hair=HAIR[(id*3)%5],shirt=SHIRT[id%6];
+    const g=el('g',{transform:`translate(${x},${row.y}) scale(${row.s})`},demoLayer);
+    const br=el('g',{class:'breath'},g);br.style.animationDelay=(-id*.7)+'s';
+    el('path',{d:'M-64,96 C-64,46 -34,34 0,34 C34,34 64,46 64,96 Z',fill:shirt},br);
+    el('rect',{x:-9,y:22,width:18,height:20,fill:skin,filter:'brightness(.88)'},br);
+    const head=el('g',{class:'head'},br);
+    el('circle',{cx:0,cy:0,r:34,fill:skin},head);
+    el('path',{d:'M-36,-2 C-40,-44 -8,-48 4,-47 C30,-47 40,-28 36,-2 C28,-22 6,-26 -36,-2 Z',fill:hair},head);
+    const fig={breath:br,head:head,key:''};
+    [-13,13].forEach((ex,k)=>{
+      const eye=el('ellipse',{cx:ex,cy:2,rx:7,ry:6,fill:'#F7F7F2'},head);
+      const pup=el('circle',{cx:ex,cy:2,r:3.2,fill:'#1d1a18',class:'pup'},head);
+      const lid=el('rect',{x:ex-8,y:-9,width:16,height:0,fill:skin},head);
+      if(k===0){fig.eyeL=eye;fig.pupL=pup;fig.lidL=lid;}else{fig.eyeR=eye;fig.pupR=pup;fig.lidR=lid;}
+    });
+    fig.brL=el('path',{d:'',stroke:hair,'stroke-width':3.4,fill:'none','stroke-linecap':'round'},head);
+    fig.brR=el('path',{d:'',stroke:hair,'stroke-width':3.4,fill:'none','stroke-linecap':'round'},head);
+    fig.mouth=el('path',{d:'',stroke:'#5a2a22','stroke-width':3,fill:'#5a2a22','fill-opacity':0,'stroke-linecap':'round','stroke-linejoin':'round'},head);
+    el('rect',{x:-80,y:68,width:160,height:38,rx:5,fill:'#8a6a4a'},br);
+    el('rect',{x:-80,y:68,width:160,height:6,rx:3,fill:'#a98562'},br);
+    el('rect',{x:-30,y:76,width:60,height:12,rx:2,fill:'#f1efe4',opacity:.85},br);
+    T.fig=fig;
+    T.box={x:x-48*row.s,y:row.y-54*row.s,w:96*row.s,h:106*row.s};
+    T.scale=row.s;
+    S.tracks.push(T);id++;
+  });});
+}
+function demoStep(T,now,dt){
+  const P=PRESETS[T.preset],k=1-Math.exp(-dt*5),c=T.cur;
+  new Set([...Object.keys(c.bs),...Object.keys(P.bs)]).forEach(n=>{const a=c.bs[n]||0,b=P.bs[n]||0;c.bs[n]=a+(b-a)*k;});
+  ['yaw','pitch','roll'].forEach(n=>c.pose[n]+=(P.pose[n]-c.pose[n])*k);
+  const tt=now/1000+T.id*1.7;let blink=0;
+  if(P.blink>.4)blink=clamp(.5+.45*Math.sin(tt*1.6));
+  else{T.blinkT-=dt;if(T.blinkT<-.15)T.blinkT=3+Math.random()*2;blink=T.blinkT<0?1:0;}
+  c.bs.eyeBlinkLeft=c.bs.eyeBlinkRight=blink;
+  c.bs.jawOpen=Math.max(c.bs.jawOpen||0,P.yawn&&(tt%7)<1.2?.75:0);
+  const wob=Math.sin(tt*1.3)*.015;
+  return {bs:c.bs,pose:{yaw:c.pose.yaw+wob,pitch:c.pose.pitch+wob,roll:c.pose.roll}};
+}
+function warmUp(T){ // deja las métricas estabilizadas en el primer cuadro
+  let t=-30000;
+  for(let i=0;i<320;i++){const r=demoStep(T,t,.1);T.f=features(r.bs,r.pose);compute(T,T.f,t,.1);t+=100;}
+  T.state=stateWord(T.m);T.stateSince=performance.now()-((T.id*13)%40)*1000;
+}
+buildDemoStudents();
+S.tracks.forEach(warmUp);
+
+/* ================= recuadros (overlay) ================= */
+const brk=(x,y,w,h,l)=>`M${x},${y+l} V${y} H${x+l} M${x+w-l},${y} H${x+w} V${y+l} M${x+w},${y+h-l} V${y+h} H${x+w-l} M${x+l},${y+h} H${x} V${y+h-l}`;
+const chipW=t=>Math.round(t.length*9.1+18);
+function createOv(T){
+  const g=el('g',{class:'ov',tabindex:0,role:'button'},ovLayer);
+  const o={g:g};
+  o.hit=el('rect',{class:'hit'},g);
+  o.ring=el('rect',{class:'ring',rx:6},g);
+  o.brk=el('path',{class:'brk'},g);
+  o.barsBg=[];o.bars=[];
+  MET.forEach((m,i)=>{o.barsBg.push(el('rect',{rx:1.5,fill:'rgba(255,255,255,.2)'},g));o.bars.push(el('rect',{rx:1.5,fill:m[2]},g));});
+  o.c1=el('rect',{rx:5},g);o.t1=el('text',{class:'chip-t'},g);
+  o.c2=el('rect',{rx:5,fill:'rgba(6,10,12,.78)'},g);o.d2=el('circle',{r:4},g);o.t2=el('text',{class:'chip-m',fill:'#f4eee4'},g);
+  o.last='';
+  let lastTap=0;
+  g.addEventListener('click',()=>{sel=T.id;markSel();});
+  g.addEventListener('dblclick',e=>{e.preventDefault();openStudent(T.id);});
+  g.addEventListener('pointerup',e=>{if(e.pointerType==='touch'||e.pointerType==='pen'){const n=Date.now();if(n-lastTap<380){openStudent(T.id);lastTap=0;}else lastTap=n;}});
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openStudent(T.id);}});
+  T.ov=o;
+}
+function markSel(){S.tracks.forEach(t=>t.ov&&t.ov.g.classList.toggle('sel',t.id===sel));}
+function whereOf(T){
+  if(T.demo)return ROWS[T.row].label;
+  const c=(T.box.x+T.box.w/2)/1200;return c<.33?'Zona izquierda':c<.66?'Zona central':'Zona derecha';
+}
+function renderOv(T){
+  if(!T.ov)createOv(T);
+  const o=T.ov,b=T.box,a=T.alert?ALERTS[T.alert]:null;
+  const key=[Math.round(b.x),Math.round(b.y),Math.round(b.w),Math.round(b.h),T.state,T.mood,T.calib?1:0,a?T.alert:'',pct(T.m.att),pct(T.m.fat),pct(T.m.fru),pct(T.m.con)].join('|');
+  if(key===o.last)return;o.last=key;
+  const pad=8,l=Math.max(12,Math.min(26,b.w*.22));
+  o.hit.setAttribute('x',b.x-pad);o.hit.setAttribute('y',b.y-pad);o.hit.setAttribute('width',b.w+pad*2+14);o.hit.setAttribute('height',b.h+pad*2);
+  const rp=Math.max(8,b.w*.14);
+  o.ring.setAttribute('x',b.x-rp);o.ring.setAttribute('y',b.y-rp);o.ring.setAttribute('width',b.w+rp*2);o.ring.setAttribute('height',b.h+rp*2);
+  o.brk.setAttribute('d',brk(b.x,b.y,b.w,b.h,l));
+  const col=a?ALARM:T.calib?'#968fa6':auraColor(T);
+  o.brk.setAttribute('stroke',col);
+  o.g.classList.toggle('alarm',!!a);
+  o.g.setAttribute('aria-label',`${T.name}, ${whereOf(T)}. Doble click o Enter para ver sugerencias`);
+  MET.forEach((m,i)=>{
+    const x=b.x+b.w+7+i*6,v=T.calib?0:clamp(T.m[m[0]]);
+    o.barsBg[i].setAttribute('x',x);o.barsBg[i].setAttribute('y',b.y);o.barsBg[i].setAttribute('width',4);o.barsBg[i].setAttribute('height',b.h);
+    o.bars[i].setAttribute('x',x);o.bars[i].setAttribute('width',4);o.bars[i].setAttribute('height',Math.max(1,b.h*v));o.bars[i].setAttribute('y',b.y+b.h*(1-v));
+  });
+  const txt=a?`ALERTA · ${a.short}`:T.calib?'Calibrando…':T.state;
+  const cy=b.y-26;
+  o.c1.setAttribute('x',b.x);o.c1.setAttribute('y',cy);o.c1.setAttribute('width',chipW(txt));o.c1.setAttribute('height',22);o.c1.setAttribute('fill',col);
+  o.t1.setAttribute('x',b.x+9);o.t1.setAttribute('y',cy+16);o.t1.setAttribute('fill',a?'#fff':'#0B1211');o.t1.textContent=txt;
+  const show=!a&&!T.calib&&T.mood!=='Neutral';
+  const mt=MOOD_ADJ[T.mood];
+  const x2=b.x+chipW(txt)+4;
+  [o.c2,o.d2,o.t2].forEach(n=>n.style.display=show?'':'none');
+  if(show){
+    o.c2.setAttribute('x',x2);o.c2.setAttribute('y',cy);o.c2.setAttribute('width',chipW(mt)+8);o.c2.setAttribute('height',22);
+    o.d2.setAttribute('cx',x2+10);o.d2.setAttribute('cy',cy+11);o.d2.setAttribute('fill',MOOD_COL[T.mood]);
+    o.t2.setAttribute('x',x2+19);o.t2.setAttribute('y',cy+15.5);o.t2.textContent=mt;
+  }
+}
+function removeOv(T){if(T.ov){T.ov.g.remove();T.ov=null;}}
+
+/* ================= HUD, leyendas, sugerencia grupal ================= */
+const segs=$('#segs'),nudge=$('#nudge');
+const legState=$('#legState'),legMood=$('#legMood');
+STATES.forEach(k=>{const li=document.createElement('li');li.innerHTML=`<span class="sw" style="background:${STATE_COL[k]}"></span><span>${k}</span><span class="n" id="ns-${k}">0</span>`;legState.appendChild(li);});
+MOODS.forEach(k=>{const li=document.createElement('li');li.innerHTML=`<span class="sw" style="background:${MOOD_COL[k]}"></span><span>${k}</span><span class="n" id="nm-${k}">0</span>`;legMood.appendChild(li);});
+function refreshHud(){
+  const live=S.tracks.filter(t=>!t.calib);
+  const cs={},cm={};STATES.forEach(k=>cs[k]=0);MOODS.forEach(k=>cm[k]=0);
+  live.forEach(t=>{if(!t.alert){cs[t.state]++;cm[t.mood]++;}});
+  STATES.forEach(k=>$('#ns-'+k).textContent=cs[k]);MOODS.forEach(k=>$('#nm-'+k).textContent=cm[k]);
+  segs.innerHTML='';
+  S.tracks.forEach(t=>{const d=document.createElement('span');d.className='seg';d.style.background=t.alert?ALARM:t.calib?'#555':auraColor(t);segs.appendChild(d);});
+  const n=S.tracks.length;
+  $('#hudCount').textContent=`${n} ${n===1?'alumno detectado':'alumnos detectados'}`;
+  $('#hudAlerts').firstChild.textContent=`${active.length} ${active.length===1?'alerta':'alertas'} · `;
+  $('#hudFps').textContent=S.fps+' fps';
+  const g={};
+  live.forEach(t=>{if(t.alert)return;if(['Frustrado','Confundido','Fatigado','Distraído'].includes(t.state))g[t.state]=(g[t.state]||0)+1;else if(t.mood==='Tristeza')g.Tristeza=(g.Tristeza||0)+1;});
+  let best=null;for(const k in g)if(g[k]>=3&&(!best||g[k]>g[best]))best=k;
+  if(best){
+    const col=best==='Tristeza'?MOOD_COL.Tristeza:STATE_COL[best];
+    nudge.innerHTML=`<span><b>${g[best]} de ${S.tracks.length} alumnos ${GROUP_PLURAL[best]}</b><small>Tocá para ver la sugerencia para el grupo</small></span>`;
+    nudge.style.borderLeftColor=col;nudge.dataset.key=best;nudge.classList.add('show');
+  }else{nudge.classList.remove('show');nudge.dataset.key='';}
+}
+nudge.addEventListener('click',()=>{if(nudge.dataset.key)openGroup(nudge.dataset.key);});
+
+/* ================= panel de sugerencias ================= */
+const sheet=$('#sheet'),shBody=$('#shBody'),shFoot=$('#shFoot');
+const secs=since=>{const n=Math.max(0,Math.round((performance.now()-since)/1000));return n<60?`${n} s`:`${Math.floor(n/60)} min ${n%60} s`;};
+const byId=id=>S.tracks.find(t=>t.id===id);
+function openStudent(id){const T=byId(id);if(!T)return;sel=id;markSel();sheetMode={type:'student',id:id,state:T.state};log(`Sugerencias abiertas · ${T.name} (${T.alert?'alerta':T.state+', '+MOOD_ADJ[T.mood]})`);renderSheet(false);}
+function openGroup(key){sheetMode={type:'group',key:key,sig:groupSig(key)};log(`Sugerencia grupal abierta · ${GROUP_PLURAL[key]}`);renderSheet(false);}
+function closeSheet(){sheetMode=null;sheet.hidden=true;}
+$('#shClose').addEventListener('click',closeSheet);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet();});
+function groupMembers(key){return S.tracks.filter(t=>!t.alert&&!t.calib&&(key==='Tristeza'?t.mood==='Tristeza':t.state===key));}
+function groupSig(key){return groupMembers(key).map(t=>t.id).join();}
+
+function liveBlock(T){
+  return MET.map(m=>`<div class="met"><span>${m[3]}</span><span class="tr"><i id="mb-${m[0]}" style="width:${pct(T.m[m[0]])}%;background:${m[2]}"></i></span><b id="mv-${m[0]}">${pct(T.m[m[0]])}%</b></div>`).join('');
+}
+function emoBlock(T){
+  return `<div class="emos">`+MOODS.map(k=>{const v=k==='Neutral'?neutralPct(T):T.emoS[k];return `<span id="em-${k}" class="${T.mood===k?'on':''}" style="${T.mood===k?'background:'+MOOD_COL[k]:''}">${k} ${pct(v)}%</span>`;}).join('')+`</div>`;
+}
+function renderSheet(flash){
+  if(!sheetMode)return;
+  sheet.hidden=false;
+  if(sheetMode.type==='student'){
+    const T=byId(sheetMode.id);
+    if(!T){closeSheet();return;}
+    sheetMode.state=T.state;
+    $('#shAvatar').textContent=T.name.replace(/^\D+/,'')||T.name[0];
+    $('#shAvatar').style.background=T.alert?ALARM:auraColor(T);
+    $('#sheetTitle').textContent=T.name;
+    if(T.alert){
+      const a=ALERTS[T.alert];
+      $('#shSub').textContent=`${whereOf(T)} · alerta activa`;
+      shBody.innerHTML=`<div class="state-row"><span class="chip" style="background:${ALARM};color:#fff">${esc(a.title)}</span></div><p>Hay una alerta de seguridad activa para este alumno. Seguí el protocolo del recuadro rojo antes de aplicar sugerencias pedagógicas.</p>`;
+      shFoot.innerHTML=`<button class="primary" id="fClose">Entendido</button>`;$('#fClose').onclick=closeSheet;return;
+    }
+    if(T.calib){$('#shSub').textContent=`${whereOf(T)} · calibrando`;shBody.innerHTML='<p>Todavía se está calibrando este rostro (4 s). Pedile cara neutra.</p>';shFoot.innerHTML='<button class="primary" id="fClose">Entendido</button>';$('#fClose').onclick=closeSheet;return;}
+    const t=TIPS[T.state];
+    $('#shSub').textContent=`${whereOf(T)} · hace ${secs(T.stateSince)} con este estado`;
+    const mt=MOOD_TIPS[T.mood];
+    shBody.innerHTML=`<div class="state-row ${flash?'flash':''}"><span class="chip" style="background:${auraColor(T)}">${T.state}</span><span class="chip" style="background:${MOOD_COL[T.mood]}">${MOOD_ADJ[T.mood]}</span></div>
+      <h3 class="first">Medidas</h3>${liveBlock(T)}${emoBlock(T)}
+      <h3>Señales detectadas</h3><ul>${t.senales.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      <h3>Qué podés hacer ahora</h3><ol>${t.acciones.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
+      ${mt?`<h3>Sobre su ánimo</h3><p>${esc(mt)}</p>`:''}
+      <h3>Evitá</h3><p class="avoid">${esc(t.evitar)}</p>
+      <p class="caveat">Es una estimación a partir del rostro, calibrada contra su cara neutra. Confirmala con una pregunta o una charla corta; no es un diagnóstico.</p>`;
+    shFoot.innerHTML=`<button id="fNo">No aplica ahora</button><button class="primary" id="fYes">La apliqué</button>`;
+    $('#fYes').onclick=()=>{log(`Sugerencia aplicada · ${T.name} (${T.state})`);closeSheet();};
+    $('#fNo').onclick=()=>{log(`Sugerencia descartada · ${T.name} (${T.state})`);closeSheet();};
+  }else{
+    const k=sheetMode.key,who=groupMembers(k),t=TIPS[k];
+    const col=k==='Tristeza'?MOOD_COL.Tristeza:STATE_COL[k];
+    $('#shAvatar').textContent=who.length;$('#shAvatar').style.background=col;
+    $('#sheetTitle').textContent=`Grupo: ${GROUP_PLURAL[k]}`;
+    $('#shSub').textContent=`${who.length} de ${S.tracks.length} alumnos ahora`;
+    shBody.innerHTML=`<h3 class="first">Sugerencia para toda la clase</h3><p>${esc(t.grupo||'')}</p>
+      ${t.acciones?`<h3>Primeras acciones</h3><ol>${t.acciones.slice(0,2).map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''}
+      <h3>Alumnos</h3><div class="names">${who.map(s=>`<button data-id="${s.id}">${esc(s.name)}</button>`).join('')}</div>
+      <p class="caveat">Tocá un nombre para ver la sugerencia individual.</p>`;
+    shBody.querySelectorAll('.names button').forEach(b=>b.onclick=()=>openStudent(+b.dataset.id));
+    shFoot.innerHTML=`<button id="fNo">No aplica ahora</button><button class="primary" id="fYes">La apliqué</button>`;
+    $('#fYes').onclick=()=>{log(`Sugerencia grupal aplicada · ${GROUP_PLURAL[k]}`);closeSheet();};
+    $('#fNo').onclick=()=>{log(`Sugerencia grupal descartada · ${GROUP_PLURAL[k]}`);closeSheet();};
+  }
+}
+function liveSheet(){
+  if(!sheetMode)return;
+  if(sheetMode.type==='group'){const s=groupSig(sheetMode.key);if(s!==sheetMode.sig){sheetMode.sig=s;renderSheet(false);}return;}
+  const T=byId(sheetMode.id);if(!T){closeSheet();return;}
+  if(T.alert||T.calib){if(!$('#fClose'))renderSheet(false);return;}
+  if(T.state!==sheetMode.state||!$('#mb-att')){renderSheet(true);return;}
+  MET.forEach(m=>{$('#mb-'+m[0]).style.width=pct(T.m[m[0]])+'%';$('#mv-'+m[0]).textContent=pct(T.m[m[0]])+'%';});
+  MOODS.forEach(k=>{const e=$('#em-'+k);if(!e)return;const v=k==='Neutral'?neutralPct(T):T.emoS[k];e.textContent=`${k} ${pct(v)}%`;e.className=T.mood===k?'on':'';e.style.background=T.mood===k?MOOD_COL[k]:'';});
+  $('#shSub').textContent=`${whereOf(T)} · hace ${secs(T.stateSince)} con este estado`;
+}
+
+/* ================= alertas ================= */
+const alertBox=$('#alert');
+let actx=null,beepTimer=null;
+function ensureAudio(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();}catch(e){}}
+document.addEventListener('click',ensureAudio);
+function beep(){if(!actx||actx.state!=='running')return;try{[0,.22,.44].forEach(d=>{const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime+d;o.type='square';o.frequency.value=880;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.06,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+.18);});}catch(e){}}
+function syncBeep(){const need=active.some(a=>!a.ack);if(need&&!beepTimer){beep();beepTimer=setInterval(beep,2600);}if(!need&&beepTimer){clearInterval(beepTimer);beepTimer=null;}}
+const sorted=()=>active.slice().sort((a,b)=>(ALERTS[a.type].rank-ALERTS[b.type].rank)||(b.t-a.t));
+function alertWhere(a){
+  const d=ALERTS[a.type];
+  const ts=a.targets.map(byId).filter(Boolean);
+  if(ts.length)return ts.map(t=>t.name).join(' y ')+' · '+whereOf(ts[0]);
+  return d.where||'Sin alumnos detectados en cámara';
+}
+function triggerAlert(type,targets,sim){
+  if(active.some(a=>a.type===type))return;
+  ensureAudio();
+  const d=ALERTS[type];
+  if(!targets){
+    if(S.mode==='demo')targets=d.demo.slice();
+    else targets=S.tracks.slice().sort((p,q)=>p.box.x-q.box.x).slice(0,d.n).map(t=>t.id);
+  }
+  const a={id:++alertSeq,type:type,t:Date.now(),ack:false,open:d.sev==='Crítica',targets:targets,sim:!!sim};
+  active.push(a);
+  targets.forEach(id=>{const T=byId(id);if(T)T.alert=type;});
+  if(d.global==='humo'){$('#smoke').classList.add('on');$('#g-humo').classList.add('on');}
+  if(d.global==='puerta'){$('#intruder').classList.add('on');$('#g-puerta').classList.add('on');}
+  viewIdx=0;
+  log(`ALERTA${sim?' (simulada)':''} · ${d.title} (${alertWhere(a)})`,'alert');
+  renderAlert();refreshHud();syncBeep();refreshAlertBtns();
+  if(sheetMode&&sheetMode.type==='student'&&byId(sheetMode.id)&&byId(sheetMode.id).alert)renderSheet(false);
+}
+function closeAlert(a,why){
+  const d=ALERTS[a.type];
+  active=active.filter(x=>x!==a);
+  a.targets.forEach(id=>{const T=byId(id);if(T){T.alert=null;T.stateSince=performance.now();T.cool[a.type]=performance.now();}});
+  if(d.global==='humo'){$('#smoke').classList.remove('on');$('#g-humo').classList.remove('on');}
+  if(d.global==='puerta'){$('#intruder').classList.remove('on');$('#g-puerta').classList.remove('on');}
+  log(`${why} · ${d.title}`);viewIdx=0;renderAlert();refreshHud();syncBeep();refreshAlertBtns();
+}
+function renderAlert(){
+  const list=sorted();
+  stage.classList.toggle('alerting',active.some(a=>!a.ack));
+  stage.classList.toggle('alerting-ack',active.length>0&&active.every(a=>a.ack));
+  if(!list.length){alertBox.hidden=true;return;}
+  const a=list[viewIdx%list.length],d=ALERTS[a.type];
+  alertBox.hidden=false;alertBox.classList.toggle('is-ack',a.ack);
+  const ago=Math.round((Date.now()-a.t)/1000);
+  $('#alertSev').innerHTML=`${a.ack?'Atendida':d.sev} · hace ${ago} s<span class="tag-sim">${a.sim?'simulada':'detectada'}</span>`;
+  $('#alertTitle').textContent=d.title;
+  $('#alertWhere').textContent=alertWhere(a)+(!a.sim&&d.signal?' · '+d.signal:'');
+  const more=$('#alertMore');if(list.length>1){more.hidden=false;more.textContent=`+${list.length-1} más`;}else more.hidden=true;
+  const steps=$('#alertSteps');steps.innerHTML=d.steps.map(s=>`<li>${s}</li>`).join('');steps.hidden=!a.open;
+  $('#btnSteps').textContent=a.open?'Ocultar protocolo':'Ver protocolo';
+  $('#btnAck').textContent=a.ack?'Resolver':'Enterado';$('#btnFalse').hidden=a.ack;
+}
+const curAlert=()=>{const l=sorted();return l.length?l[viewIdx%l.length]:null;};
+$('#btnSteps').addEventListener('click',()=>{const a=curAlert();if(a){a.open=!a.open;renderAlert();}});
+$('#btnAck').addEventListener('click',()=>{const a=curAlert();if(!a)return;if(a.ack)closeAlert(a,'Alerta resuelta');else{a.ack=true;log(`Alerta atendida · ${ALERTS[a.type].title}`);renderAlert();syncBeep();}});
+$('#btnFalse').addEventListener('click',()=>{const a=curAlert();if(a)closeAlert(a,'Falso positivo');});
+$('#alertMore').addEventListener('click',()=>{viewIdx++;renderAlert();});
+
+/* detección real: cabeza caída con ojos cerrados, y tristeza sostenida (mismo umbral que la regla "Ánimo" de Lumen alumnos) */
+const WATCH=[
+  {id:'desmayo',test:T=>T.f.blink>.8&&T.a.pitch>.4,sustain:5000,cd:60000},
+  {id:'angustia',test:T=>T.emoS.Tristeza>.5,sustain:6000,cd:120000}
+];
+function watch(T,now){
+  if(T.calib||T.alert)return;
+  WATCH.forEach(r=>{
+    if(r.test(T)){
+      if(T.since[r.id]==null)T.since[r.id]=now;
+      if(now-T.since[r.id]>=r.sustain&&now-(T.cool[r.id]||-1e9)>=r.cd&&!active.some(a=>a.type===r.id)){T.cool[r.id]=now;triggerAlert(r.id,[T.id],false);}
+    }else T.since[r.id]=null;
+  });
+}
+
+/* ================= panel de pruebas ================= */
+const alertBtns=$('#alertBtns');
+ALERT_ORDER.forEach(k=>{const d=ALERTS[k],b=document.createElement('button');b.className='abtn';b.dataset.k=k;
+  b.innerHTML=`<span class="sev ${d.sev==='Crítica'?'c':d.sev==='Alta'?'a':'m'}">${d.sev}</span><span>${esc(d.title)}</span>`;
+  b.addEventListener('click',()=>triggerAlert(k,null,true));alertBtns.appendChild(b);});
+function refreshAlertBtns(){alertBtns.querySelectorAll('.abtn').forEach(b=>{b.disabled=active.some(a=>a.type===b.dataset.k);});}
+const ctxBtns=$('#ctxBtns');
+Object.keys(CONTEXTS).forEach(k=>{const b=document.createElement('button');b.className='pill';b.textContent=CONTEXTS[k].label;b.dataset.k=k;b.setAttribute('aria-pressed',k===S.ctx?'true':'false');
+  b.addEventListener('click',()=>{S.ctx=k;ctxBtns.querySelectorAll('.pill').forEach(x=>x.setAttribute('aria-pressed',x.dataset.k===k?'true':'false'));log(`Momento de clase · ${CONTEXTS[k].label}`);});ctxBtns.appendChild(b);});
+function log(text,kind){
+  const t=new Date().toLocaleTimeString('es-AR',{hour12:false});
+  logLines.unshift({t:t,text:text,kind:kind||''});if(logLines.length>80)logLines.pop();
+  $('#log').innerHTML=logLines.slice(0,12).map(l=>`<li><time>${l.t}</time><span class="${l.kind?'k-'+l.kind:''}">${esc(l.text)}</span></li>`).join('');
+}
+$('#copyLog').addEventListener('click',async()=>{
+  const txt=logLines.slice().reverse().map(l=>`${l.t}  ${l.text}`).join('\n')||'Sin eventos.';
+  try{await navigator.clipboard.writeText(txt);$('#copyMsg').textContent=' Copiado.';}catch(e){$('#copyMsg').textContent=' No se pudo copiar desde esta vista.';}
+  setTimeout(()=>{$('#copyMsg').textContent='';},2500);
+});
+
+/* ================= cámara y modelos (igual que Lumen alumnos, con varios rostros) ================= */
+const CDN='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const video=$('#video'),cv=$('#cv'),cctx=cv.getContext('2d');
+async function loadModels(){
+  if(window.__LM_MOCK){S.landmarker=window.__LM_MOCK;return;}
+  const mod=await import(CDN+'/vision_bundle.mjs');
+  const files=await mod.FilesetResolver.forVisionTasks(CDN+'/wasm');
+  const url='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+  const o=d=>({baseOptions:{modelAssetPath:url,delegate:d},runningMode:'VIDEO',numFaces:12,outputFaceBlendshapes:true});
+  try{S.landmarker=await mod.FaceLandmarker.createFromOptions(files,o('GPU'));}catch(e){S.landmarker=await mod.FaceLandmarker.createFromOptions(files,o('CPU'));}
+}
+const camMsg=(t,err)=>{const m=$('#camMsg');m.textContent=t;m.classList.toggle('err',!!err);};
+function setSource(src){
+  $('#srcDemo').setAttribute('aria-pressed',src==='demo'?'true':'false');
+  $('#srcCam').setAttribute('aria-pressed',src==='cam'?'true':'false');
+}
+async function startCamera(){
+  $('#btnStartCam').disabled=true;
+  try{
+    camMsg('Pidiendo acceso a la cámara…');
+    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+    video.srcObject=S.stream;await video.play();
+    camMsg('Cargando modelo de rostros (≈4 MB)…');
+    await loadModels();
+    switchToCam();
+    camMsg('Cámara activa. Cada rostro se calibra 4 s con cara neutra.');
+  }catch(e){
+    console.error(e);
+    if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}
+    const blocked=e&&(e.name==='NotAllowedError'||e.name==='SecurityError');
+    camMsg(blocked?'No se pudo usar la cámara. Esta vista puede bloquearla: abrí el archivo en Chrome desde localhost (abrir-docentes.bat) y aceptá el permiso.':`No se pudo iniciar la cámara o el modelo (${e&&e.name||'error'}). Revisá permisos y conexión.`,true);
+    $('#btnStartCam').disabled=!$('#consent').checked;
+  }
+}
+function clearTracks(){S.tracks.forEach(removeOv);active.slice().forEach(a=>closeAlert(a,'Alerta cerrada al cambiar de fuente'));S.tracks=[];sheetMode&&closeSheet();}
+function switchToCam(){
+  clearTracks();S.mode='cam';S.seq=0;stage.classList.add('cam');setSource('cam');
+  $('#hudStatus').textContent='LENTES ACTIVOS · CÁMARA';$('#btnRecal').disabled=false;
+  log('Cámara activada');refreshHud();
+}
+function switchToDemo(){
+  if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}
+  clearTracks();S.mode='demo';S.seq=0;stage.classList.remove('cam');setSource('demo');
+  buildDemoStudents();S.tracks.forEach(warmUp);
+  $('#hudStatus').textContent='LENTES ACTIVOS · DEMO';$('#btnRecal').disabled=true;
+  $('#btnStartCam').disabled=!$('#consent').checked;
+  log('Modo demo');refreshHud();
+}
+$('#consent').onchange=e=>{$('#btnStartCam').disabled=!e.target.checked||S.mode==='cam';};
+$('#btnStartCam').onclick=startCamera;
+$('#srcCam').onclick=()=>{if(S.mode==='cam')return;if(!$('#consent').checked)camMsg('Tildá el aviso de privacidad y tocá «Activar cámara».');else startCamera();};
+$('#srcDemo').onclick=()=>{if(S.mode!=='demo')switchToDemo();};
+$('#btnRecal').onclick=()=>{S.tracks.forEach(T=>{T.calib={until:performance.now()+4000,n:0,sum:{}};T.base={};});log('Recalibración iniciada');};
+
+/* ================= seguimiento de rostros ================= */
+function fitInfo(){
+  const vw=video.videoWidth||1280,vh=video.videoHeight||720;
+  const sc=Math.max(1200/vw,675/vh),dw=vw*sc,dh=vh*sc;
+  return {dw,dh,ox:(1200-dw)/2,oy:(675-dh)/2};
+}
+function detectFrame(now){
+  if(!(video.readyState>=2)||video.currentTime===S.lastVT)return;
+  S.lastVT=video.currentTime;S.frames++;
+  const out=S.landmarker.detectForVideo(video,now);
+  const fi=fitInfo(),mir=$('#mirror').checked;
+  const dets=(out.faceLandmarks||[]).map((lm,i)=>{
+    const bs={};((out.faceBlendshapes&&out.faceBlendshapes[i])?out.faceBlendshapes[i].categories:[]).forEach(c=>bs[c.categoryName]=c.score);
+    let x0=1,y0=1,x1=0,y1=0;for(const p of lm){if(p.x<x0)x0=p.x;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y;}
+    const cx=(x0+x1)/2,cy=(y0+y1)/2,w=x1-x0,h=y1-y0;
+    const px=nx=>fi.ox+(mir?1-nx:nx)*fi.dw,py=ny=>fi.oy+ny*fi.dh;
+    const bx0=px(mir?x1+w*.08:x0-w*.08),bx1=px(mir?x0-w*.08:x1+w*.08);
+    const by0=py(y0-h*.12),by1=py(y1+h*.06);
+    return {bs,pose:poseFromLm(lm),cx,cy,box:{x:Math.min(bx0,bx1),y:by0,w:Math.abs(bx1-bx0),h:by1-by0}};
+  });
+  const pairs=[];
+  dets.forEach((d,i)=>S.tracks.forEach((T,j)=>{if(T.nx!=null)pairs.push([Math.hypot(d.cx-T.nx,d.cy-T.ny),i,j]);}));
+  pairs.sort((a,b)=>a[0]-b[0]);
+  const usedD=new Set(),usedT=new Set();
+  pairs.forEach(([dist,i,j])=>{if(dist<.2&&!usedD.has(i)&&!usedT.has(j)){usedD.add(i);usedT.add(j);feed(S.tracks[j],dets[i],now);}});
+  dets.forEach((d,i)=>{if(usedD.has(i))return;const T=newTrack(`Alumno ${S.seq+1}`);T.calib={until:now+4000,n:0,sum:{}};T.lastT=now;T.box=d.box;S.tracks.push(T);feed(T,d,now);log(`Nuevo rostro · ${T.name}`);});
+  S.tracks=S.tracks.filter(T=>{if(now-T.lastSeen>1500){removeOv(T);if(sheetMode&&sheetMode.type==='student'&&sheetMode.id===T.id)closeSheet();return false;}return true;});
+}
+function feed(T,d,now){
+  const dt=clamp((now-T.lastT)/1000,.01,.1);T.lastT=now;T.lastSeen=now;
+  T.nx=d.cx;T.ny=d.cy;
+  const k=.45;['x','y','w','h'].forEach(p=>T.box[p]+=(d.box[p]-T.box[p])*k);
+  const f=features(d.bs,d.pose);T.f=f;
+  if(T.calib){
+    T.calib.n++;BASE_KEYS.forEach(k2=>T.calib.sum[k2]=(T.calib.sum[k2]||0)+f[k2]);
+    if(now>=T.calib.until){BASE_KEYS.forEach(k2=>T.base[k2]=T.calib.sum[k2]/T.calib.n);T.calib=null;T.perclos=[];T.yawns=[];T.stateSince=now;}
+  }else compute(T,f,now,dt);
+}
+
+/* ================= bucle principal ================= */
+function drawVideo(){
+  const fi=fitInfo();
+  cctx.save();cctx.filter='saturate(.8) contrast(1.05) brightness(.92)';
+  if($('#mirror').checked){cctx.translate(fi.ox+fi.dw,fi.oy);cctx.scale(-1,1);}else cctx.translate(fi.ox,fi.oy);
+  cctx.drawImage(video,0,0,fi.dw,fi.dh);cctx.restore();
+  cctx.fillStyle='rgba(2,14,28,.22)';cctx.fillRect(0,0,1200,675);
+}
+let prev=0,lastUi=0,fpsT=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(.1,(now-(prev||now))/1000)||.033;prev=now;
+  if(S.mode==='demo'){
+    S.frames++;
+    S.tracks.forEach(T=>{const r=demoStep(T,now,dt);T.f=features(r.bs,r.pose);compute(T,T.f,now,dt);T.lastSeen=now;});
+  }else if(S.mode==='cam'&&S.landmarker){
+    try{detectFrame(now);}catch(e){console.error(e);}
+    drawVideo();
+  }
+  if(now-fpsT>1000){S.fps=Math.round(S.frames*1000/(now-fpsT));S.frames=0;fpsT=now;}
+  S.tracks.forEach(T=>{
+    const st=stateWord(T.m);
+    if(st!==T.state){T.state=st;T.stateSince=now;}
+    if(T.fig){setFace(T,faceKeyFor(T));T.fig.breath.classList.toggle('shake',!!(T.alert&&ALERTS[T.alert].shake));}
+    watch(T,now);renderOv(T);
+  });
+  if(now-lastUi>500){lastUi=now;refreshHud();liveSheet();if(active.length)renderAlert();}
+}
+setInterval(()=>{ // cambio de actividad simulada en el modo demo
+  if(S.mode!=='demo')return;
+  const w=CONTEXTS[S.ctx].w;
+  S.tracks.forEach(T=>{
+    if(T.alert||Math.random()>.07)return;
+    let tot=0;for(const k in w)if(k!==T.preset)tot+=w[k];let r=Math.random()*tot,pick='Concentrado';
+    for(const k in w){if(k===T.preset)continue;r-=w[k];if(r<=0){pick=k;break;}}
+    T.preset=pick;
+  });
+},1000);
+
+function fit(){stage.style.setProperty('--u',(stage.clientWidth/100)+'px');}
+fit();new ResizeObserver(fit).observe(stage);
+S.tracks.forEach(renderOv);refreshHud();refreshAlertBtns();
+requestAnimationFrame(loop);
+window.__lumen={S,triggerAlert,stateWord};
+</script>
+</body>
+</html>
