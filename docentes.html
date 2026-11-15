@@ -656,7 +656,7 @@ function whereOf(T){
 function renderOv(T){
   if(!T.ov)createOv(T);
   const o=T.ov,b=T.box,a=T.alert?ALERTS[T.alert]:null;
-  const key=[Math.round(b.x),Math.round(b.y),Math.round(b.w),Math.round(b.h),T.state,T.mood,T.calib?1:0,a?T.alert:'',pct(T.m.att),pct(T.m.fat),pct(T.m.fru),pct(T.m.con)].join('|');
+  const key=[Math.round(b.x),Math.round(b.y),Math.round(b.w),Math.round(b.h),T.state,T.mood,T.calib?1:0,T.body?1:0,a?T.alert:'',pct(T.m.att),pct(T.m.fat),pct(T.m.fru),pct(T.m.con)].join('|');
   if(key===o.last)return;o.last=key;
   const pad=8,l=Math.max(12,Math.min(26,b.w*.22));
   o.hit.setAttribute('x',b.x-pad);o.hit.setAttribute('y',b.y-pad);o.hit.setAttribute('width',b.w+pad*2+14);o.hit.setAttribute('height',b.h+pad*2);
@@ -672,8 +672,8 @@ function renderOv(T){
     o.barsBg[i].setAttribute('x',x);o.barsBg[i].setAttribute('y',b.y);o.barsBg[i].setAttribute('width',4);o.barsBg[i].setAttribute('height',b.h);
     o.bars[i].setAttribute('x',x);o.bars[i].setAttribute('width',4);o.bars[i].setAttribute('height',Math.max(1,b.h*v));o.bars[i].setAttribute('y',b.y+b.h*(1-v));
   });
-  const txt=(a?`ALERTA · ${a.short}`:T.calib?'Calibrando…':T.state).toUpperCase();
-  const cy=b.y-26;
+  const txt=(a?`ALERTA · ${a.short}`:T.body?'Sin rostro':T.calib?'Calibrando…':T.state).toUpperCase();
+  const cy=Math.max(6,b.y-26);
   o.c1.setAttribute('x',b.x);o.c1.setAttribute('y',cy);o.c1.setAttribute('width',chipW(txt));o.c1.setAttribute('height',22);o.c1.setAttribute('fill',a?ALARM:'rgba(8,6,14,.72)');o.c1.setAttribute('stroke',col);
   o.t1.setAttribute('x',b.x+11);o.t1.setAttribute('y',cy+15);o.t1.setAttribute('fill',a?'#fff':col);o.t1.textContent=txt;
   const show=!a&&!T.calib&&T.mood!=='Neutral';
@@ -700,8 +700,8 @@ function refreshHud(){
   STATES.forEach(k=>$('#ns-'+k).textContent=cs[k]);MOODS.forEach(k=>$('#nm-'+k).textContent=cm[k]);
   segs.innerHTML='';
   S.tracks.forEach(t=>{const d=document.createElement('span');d.className='seg';d.style.background=t.alert?ALARM:t.calib?'#555':auraColor(t);segs.appendChild(d);});
-  const n=S.tracks.length;
-  $('#hudCount').textContent=`${n} ${n===1?'alumno detectado':'alumnos detectados'}`;
+  const n=S.tracks.length,nb=S.tracks.filter(t=>t.body).length;
+  $('#hudCount').textContent=`${n} ${n===1?'alumno detectado':'alumnos detectados'}`+(nb?` · ${nb} sin rostro`:'');
   $('#hudAlerts').firstChild.textContent=`${active.length} ${active.length===1?'alerta':'alertas'} · `;
   $('#hudFps').textContent=S.fps+' fps';
   const FEM={Concentrado:'CONCENTRADA',Atento:'ATENTA','Distraído':'DISTRAÍDA',Fatigado:'CANSADA',Frustrado:'FRUSTRADA',Confundido:'CONFUNDIDA'};
@@ -758,6 +758,7 @@ function renderSheet(flash){
       shBody.innerHTML=`<div class="state-row"><span class="chip" style="background:${ALARM};color:#fff">${esc(a.title)}</span></div><p>Hay una alerta de seguridad activa para este alumno. Seguí el protocolo del recuadro rojo antes de aplicar sugerencias pedagógicas.</p>`;
       shFoot.innerHTML=`<button class="primary" id="fClose">Entendido</button>`;$('#fClose').onclick=closeSheet;return;
     }
+    if(T.body){$('#shSub').textContent=`${whereOf(T)} · solo se ve el cuerpo`;shBody.innerHTML='<p>Se detecta a esta persona por el cuerpo, pero <b>no se ve el rostro</b>, así que todavía no se pueden estimar emociones ni estados.</p><h3>Qué podés hacer</h3><ol><li>Pedile que mire hacia adelante o hacia la cámara.</li><li>Acercate o reubicá la cámara para que entre la cara completa.</li><li>Mientras tanto, observá su postura y pregúntale cómo viene.</li></ol><p class="caveat">Al aparecer el rostro, se calibra solo durante 4 s con cara neutra.</p>';shFoot.innerHTML='<button class="primary" id="fClose">Entendido</button>';$('#fClose').onclick=closeSheet;return;}
     if(T.calib){$('#shSub').textContent=`${whereOf(T)} · calibrando`;shBody.innerHTML='<p>Todavía se está calibrando este rostro (4 s). Pedile cara neutra.</p>';shFoot.innerHTML='<button class="primary" id="fClose">Entendido</button>';$('#fClose').onclick=closeSheet;return;}
     const t=TIPS[T.state];
     $('#shSub').textContent=`${whereOf(T)} · hace ${secs(T.stateSince)} con este estado`;
@@ -792,7 +793,8 @@ function liveSheet(){
   if(!sheetMode)return;
   if(sheetMode.type==='group'){const s=groupSig(sheetMode.key);if(s!==sheetMode.sig){sheetMode.sig=s;renderSheet(false);}return;}
   const T=byId(sheetMode.id);if(!T){closeSheet();return;}
-  if(T.alert||T.calib){if(!$('#fClose'))renderSheet(false);return;}
+  if(T.alert||T.calib){if(!$('#fClose')||sheetMode.body!==!!T.body){sheetMode.body=!!T.body;renderSheet(false);}return;}
+  if(sheetMode.body){sheetMode.body=false;renderSheet(false);return;}
   if(T.state!==sheetMode.state||!$('#mb-att')){renderSheet(true);return;}
   MET.forEach(m=>{$('#mb-'+m[0]).style.width=pct(T.m[m[0]])+'%';$('#mv-'+m[0]).textContent=pct(T.m[m[0]])+'%';});
   MOODS.forEach(k=>{const e=$('#em-'+k);if(!e)return;const v=k==='Neutral'?neutralPct(T):T.emoS[k];e.textContent=`${k} ${pct(v)}%`;e.className=T.mood===k?'on':'';e.style.background=T.mood===k?MOOD_COL[k]:'';});
@@ -900,12 +902,17 @@ $('#copyLog').addEventListener('click',async()=>{
 const CDN='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
 const video=$('#video'),cv=$('#cv'),cctx=cv.getContext('2d');
 async function loadModels(){
-  if(window.__LM_MOCK){S.landmarker=window.__LM_MOCK;return;}
+  if(window.__LM_MOCK){S.landmarker=window.__LM_MOCK;S.persons=window.__LM_MOCK_OD||null;return;}
   const mod=await import(CDN+'/vision_bundle.mjs');
   const files=await mod.FilesetResolver.forVisionTasks(CDN+'/wasm');
   const url='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
-  const o=d=>({baseOptions:{modelAssetPath:url,delegate:d},runningMode:'VIDEO',numFaces:12,outputFaceBlendshapes:true});
+  const o=d=>({baseOptions:{modelAssetPath:url,delegate:d},runningMode:'VIDEO',numFaces:12,outputFaceBlendshapes:true,minFaceDetectionConfidence:.3,minFacePresenceConfidence:.3,minTrackingConfidence:.3});
   try{S.landmarker=await mod.FaceLandmarker.createFromOptions(files,o('GPU'));}catch(e){S.landmarker=await mod.FaceLandmarker.createFromOptions(files,o('CPU'));}
+  // detector de personas (cuerpo): sigue funcionando aunque el rostro no se vea
+  const purl='https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite';
+  const po=d=>({baseOptions:{modelAssetPath:purl,delegate:d},runningMode:'VIDEO',categoryAllowlist:['person'],scoreThreshold:.3,maxResults:12});
+  try{try{S.persons=await mod.ObjectDetector.createFromOptions(files,po('GPU'));}catch(e){S.persons=await mod.ObjectDetector.createFromOptions(files,po('CPU'));}}
+  catch(e){S.persons=null;console.warn('Sin detector de cuerpos',e);log('Detector de cuerpos no disponible: solo se detectan rostros');}
 }
 const camMsg=(t,err)=>{const m=$('#camMsg');m.textContent=t;m.classList.toggle('err',!!err);};
 function setSource(src){
@@ -980,13 +987,46 @@ function detectFrame(now){
     const by0=py(y0-h*.12),by1=py(y1+h*.06);
     return {bs,pose:poseFromLm(lm),cx,cy,box:{x:Math.min(bx0,bx1),y:by0,w:Math.abs(bx1-bx0),h:by1-by0}};
   });
+  // ---- cuerpos (personas) ----
+  if(S.persons&&now-(S.lastPT||0)>120){
+    S.lastPT=now;
+    try{
+      const vw=video.videoWidth||1280,vh=video.videoHeight||720;
+      const r=S.persons.detectForVideo(video,now);
+      S.pbox=(r.detections||[]).map(d=>{const b=d.boundingBox;return {x0:clamp(b.originX/vw),y0:clamp(b.originY/vh),x1:clamp((b.originX+b.width)/vw),y1:clamp((b.originY+b.height)/vh)};}).filter(b=>b.x1-b.x0>.05&&b.y1-b.y0>.08);
+      S.pboxT=now;
+    }catch(e){console.warn(e);}
+  }
+  const inBox=(b,x,y)=>x>=b.x0-.02&&x<=b.x1+.02&&y>=b.y0-.05&&y<=b.y0+(b.y1-b.y0)*.7;
   const pairs=[];
-  dets.forEach((d,i)=>S.tracks.forEach((T,j)=>{if(T.nx!=null)pairs.push([Math.hypot(d.cx-T.nx,d.cy-T.ny),i,j]);}));
+  dets.forEach((d,i)=>S.tracks.forEach((T,j)=>{if(!T.body&&T.nx!=null)pairs.push([Math.hypot(d.cx-T.nx,d.cy-T.ny),i,j]);}));
   pairs.sort((a,b)=>a[0]-b[0]);
   const usedD=new Set(),usedT=new Set();
   pairs.forEach(([dist,i,j])=>{if(dist<.2&&!usedD.has(i)&&!usedT.has(j)){usedD.add(i);usedT.add(j);feed(S.tracks[j],dets[i],now);}});
-  dets.forEach((d,i)=>{if(usedD.has(i))return;const T=newTrack(`Alumno ${S.seq+1}`);T.calib={until:now+4000,n:0,sum:{}};T.lastT=now;T.box=d.box;S.tracks.push(T);feed(T,d,now);log(`Nuevo rostro · ${T.name}`);});
-  S.tracks=S.tracks.filter(T=>{if(now-T.lastSeen>1500){removeOv(T);if(sheetMode&&sheetMode.type==='student'&&sheetMode.id===T.id)closeSheet();return false;}return true;});
+  dets.forEach((d,i)=>{
+    if(usedD.has(i))return;
+    // ¿es el rostro de alguien que ya teníamos solo por el cuerpo? → se convierte en seguimiento de rostro
+    const bt=S.tracks.find(T=>T.body&&T.nb&&inBox(T.nb,d.cx,d.cy));
+    if(bt){bt.body=false;bt.calib={until:now+4000,n:0,sum:{}};bt.lastT=now;bt.box=d.box;feed(bt,d,now);log(`Rostro visible · ${bt.name}`);return;}
+    const T=newTrack(`Alumno ${S.seq+1}`);T.calib={until:now+4000,n:0,sum:{}};T.lastT=now;T.box=d.box;S.tracks.push(T);feed(T,d,now);log(`Nuevo rostro · ${T.name}`);
+  });
+  if(S.pbox&&now-S.pboxT<1000){
+    const faceC=dets.map(d=>[d.cx,d.cy]);
+    const faceTracks=S.tracks.filter(T=>!T.body&&T.nx!=null&&now-T.lastSeen<1500).map(T=>[T.nx,T.ny]);
+    const solo=S.pbox.filter(b=>!faceC.some(c=>inBox(b,c[0],c[1]))&&!faceTracks.some(c=>inBox(b,c[0],c[1])));
+    const bodies=S.tracks.filter(T=>T.body);const usedB=new Set();
+    solo.forEach(b=>{
+      const cx=(b.x0+b.x1)/2,cy=(b.y0+b.y1)/2;let bi=-1,bd=.25;
+      bodies.forEach((T,j)=>{if(usedB.has(j))return;const dd=Math.hypot(cx-T.nbx,cy-T.nby);if(dd<bd){bd=dd;bi=j;}});
+      const px=nx=>fi.ox+(mir?1-nx:nx)*fi.dw,py=ny=>fi.oy+ny*fi.dh;
+      const xa=px(b.x0),xb=px(b.x1),box={x:Math.min(xa,xb),y:py(b.y0),w:Math.abs(xb-xa),h:(py(b.y1)-py(b.y0))*.6};
+      let T;
+      if(bi>=0){T=bodies[bi];usedB.add(bi);const k=.4;['x','y','w','h'].forEach(p=>T.box[p]+=(box[p]-T.box[p])*k);}
+      else{T=newTrack(`Alumno ${S.seq+1}`);T.body=true;T.calib={until:Infinity,n:0,sum:{}};T.box=box;S.tracks.push(T);log(`Nuevo cuerpo sin rostro · ${T.name}`);}
+      T.nb=b;T.nbx=cx;T.nby=cy;T.lastSeen=now;
+    });
+  }
+  S.tracks=S.tracks.filter(T=>{if(now-T.lastSeen>(T.body?2500:1500)){removeOv(T);if(sheetMode&&sheetMode.type==='student'&&sheetMode.id===T.id)closeSheet();return false;}return true;});
 }
 function feed(T,d,now){
   const dt=clamp((now-T.lastT)/1000,.01,.1);T.lastT=now;T.lastSeen=now;
