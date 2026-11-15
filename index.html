@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3CradialGradient id='g' cx='.34' cy='.3' r='.8'%3E%3Cstop offset='0' stop-color='%23fff'/%3E%3Cstop offset='.25' stop-color='%23ffe9b8'/%3E%3Cstop offset='.55' stop-color='%23ffb86b'/%3E%3Cstop offset='1' stop-color='%237a4bff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='29' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22g%22%20cx%3D%22.34%22%20cy%3D%22.3%22%20r%3D%22.8%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%22.12%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%22.25%22%20stop-color%3D%22%23ffe9b8%22/%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%23ffb86b%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237a4bff%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22url%28%23g%29%22/%3E%3C/svg%3E">
 <title>Lumen · Lentes inteligentes de alfabetización (prototipo)</title>
 <style>
 :root{
@@ -211,11 +211,31 @@ aside{display:flex;flex-direction:column;gap:14px;min-width:0}
 .diff span{background:rgba(255,179,71,.12);border:1px solid rgba(255,179,71,.4);color:var(--fat);border-radius:20px;padding:1px 10px;font-size:12px}
 details{color:var(--mut);font-size:12px}
 details summary{cursor:pointer;color:var(--txt)}
+
+/* ===== vista en primera persona ===== */
+.povlink{margin-left:auto;font-size:12px;letter-spacing:.14em;text-transform:uppercase;border-radius:999px;padding:7px 16px}
+body.pov .povlink{border-color:var(--lux);color:var(--lux)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;margin:0 0 16px;background:rgba(255,255,255,.04)}
+.seg button{border:0;background:transparent;border-radius:999px;padding:6px 16px;font-size:12px;letter-spacing:.1em;color:var(--mut)}
+.seg button.sel{background:linear-gradient(135deg,#ffe9b0,#ffb36b);color:#2a1604;font-weight:700}
+.pov .aura,.pov .strip,.pov .faces,.pov .fils,.pov .hm-state,.pov .rface,.pov .tl{display:none!important}
+body.pov .emo,body.pov #demoPanel{display:none!important}
+.pov .iris{border:2px solid var(--lux)}
+.pov .iris svg g{display:none}
+.pov .bigread{top:31%}
+.pov .mathcard{top:35%}
+.pov .mathcard .q{font-size:clamp(40px,6.4vw,68px);margin-bottom:16px}
+.pov .opts .hud-btn{min-height:64px}
+.fing{--p:0;display:none;left:30px;bottom:104px;width:68px;height:68px;border-radius:50%;place-items:center;background:conic-gradient(var(--lux) calc(var(--p)*1%),rgba(255,255,255,.16) 0)}
+.fing.show{display:grid}
+.fing::before{content:"";position:absolute;inset:5px;border-radius:50%;background:rgba(8,6,14,.82)}
+.fing b{position:relative;font:300 28px var(--f)}
 </style>
 </head>
 <body>
 <header>
   <span class="lens"></span><h1>LUMEN</h1>
+  <button class="povlink" id="povLink" type="button">Primera persona →</button>
 </header>
 
 <main>
@@ -255,6 +275,7 @@ details summary{cursor:pointer;color:var(--txt)}
           <div class="q" id="mQ">—</div>
           <div class="opts" id="mOpts"></div>
         </div>
+        <div class="fing" id="fing"><b>0</b></div>
       </div>
 
       <!-- inicio: la cámara muestra cómo estás -->
@@ -288,7 +309,8 @@ details summary{cursor:pointer;color:var(--txt)}
       <div class="center show" id="intro">
         <div class="box">
           <div class="lens intro-lens"></div>
-          <h3>Ponete los lentes</h3>
+          <h3 id="introTitle">Ponete los lentes</h3>
+          <div class="seg" id="viewSeg"><button type="button" data-v="face" class="sel">Alumno</button><button type="button" data-v="pov">Primera persona</button></div>
           <label><input type="checkbox" id="consent"> <span>Acepto usar la cámara y el micrófono en este navegador. No se graba nada.</span></label>
           <label><input type="checkbox" id="chkFs" checked> <span>Pantalla completa</span></label>
           <div class="row">
@@ -350,7 +372,7 @@ details summary{cursor:pointer;color:var(--txt)}
 </section>
 
 <aside>
-  <div class="card">
+  <div class="card emo">
     <h2>Estado en tiempo real</h2>
     <div class="mood"><strong id="mood">—</strong><small>emoción dominante</small></div>
     <div class="metric"><span>Atención</span><div class="track"><i id="m-att" style="background:var(--att)"></i></div><b id="v-att">—</b></div>
@@ -393,7 +415,7 @@ details summary{cursor:pointer;color:var(--txt)}
     <p class="note" id="p-note">Moderador (lectura): <b>Espacio</b> = bien, <b>X</b> = error, <b>S</b> = se trabó.</p>
   </div>
 
-  <div class="card chart-wrap">
+  <div class="card chart-wrap emo">
     <h2>Últimos 2 minutos</h2>
     <canvas id="chart"></canvas>
     <div class="legend">
@@ -807,13 +829,13 @@ function moodPhrase(){
 async function goHome(first, pre=''){
   haltActivities(); const my = ++A.flow; showScreen('home'); setDock('none'); tone('open'); A.cmdDone = false; S.menuShown = true; S.lastEvent = 'estado_inicial';
   listen('cmd', routeCmd);
-  await say(pre + (first ? 'Hola, soy Lumen. Estoy atento a cómo te sentís. Cuando quieras empezar, tocá iniciar actividad o decilo en voz alta.' : 'Cuando quieras seguir, tocá iniciar actividad o decilo en voz alta.'), {tag:'Asistente'});
+  await say(pre + (first ? (S.pov ? 'Hola, soy Lumen. Con el dedo índice tocá iniciar actividad, o decilo en voz alta.' : 'Hola, soy Lumen. Estoy atento a cómo te sentís. Cuando quieras empezar, tocá iniciar actividad o decilo en voz alta.') : 'Cuando quieras seguir, tocá iniciar actividad o decilo en voz alta.'), {tag:'Asistente'});
 }
 async function goMenu(first){
   haltActivities(); const my = ++A.flow; showScreen('menu'); setDock('none'); tone('open'); A.cmdDone = false; S.menuShown = true;
   S.lastEvent = 'menu_asistente';
   listen('cmd', routeCmd);   /* ya escucha mientras habla: se puede contestar sin esperar */
-  await say(`Te noto ${moodPhrase()}. ¿Hoy qué querés practicar? Podés decir matemáticas y números, o lectura.`, {tag:'Asistente'});
+  await say((S.pov ? '' : `Te noto ${moodPhrase()}. `) + '¿Hoy qué querés practicar? Podés decir matemáticas y números, o lectura.', {tag:'Asistente'});
   if (A.flow !== my) return;
   A.menuTimer = setTimeout(() => { if (A.flow===my && A.screen==='menu') say('Cuando quieras, decime matemáticas o lectura, o tocá una opción.', {tag:'Asistente'}); }, 20000);
 }
@@ -1061,13 +1083,13 @@ function finishReading(manualEnd){
   const phr = flu >= 80 ? 'fue fluida' : flu >= 55 ? 'está en desarrollo' : 'tuvo dificultades';
   const notes = [`Tu lectura ${phr}.`, `Leíste unas ${Math.round(wpm)} palabras por minuto, con ${pct(acc)} por ciento de precisión.`];
   notes.push(hard.length ? `Te costaron: ${listJoin(hard.slice(0,3).map(w => w.raw.replace(/[.,;:!?]/g,'')))}.` : 'No tuviste palabras difíciles.');
-  const fl = faceLines(fs); notes.push(...fl.notes);
+  const fl = S.pov ? {notes:[], recs:[]} : faceLines(fs); notes.push(...fl.notes);
   const recs = [];
   const sylW = hard.find(w => w.syl.length>1); if (hard.length) recs.push(`Releé el texto separando en sílabas las palabras que te costaron${sylW ? ', por ejemplo ' + sylW.syl.join(' · ') : ''}.`);
   recs.push(flu >= 80 ? 'Probá un texto un poco más difícil.' : flu >= 55 ? 'Repetí el texto una vez más, a tu ritmo.' : 'Practicá sílaba por sílaba, en voz alta y acompañado, antes de repetir.');
   recs.push(...fl.recs);
   logRec('Lectura', '--cy', `Fluidez ${flu}/100 · nivel ${RD.level}`);
-  showResult({title:'Resultado de lectura', label, score:flu, chips:[['Precisión',pct(acc)+'%'],['Ritmo',Math.round(wpm)+' ppm'],['Trabadas',RD.stucks],['Atención',pct(fs.att)+'%']], notes, recs:recs.slice(0,4)});
+  showResult({title:'Resultado de lectura', label, score:flu, chips:[['Precisión',pct(acc)+'%'],['Ritmo',Math.round(wpm)+' ppm'],['Trabadas',RD.stucks],...(S.pov ? [] : [['Atención',pct(fs.att)+'%']])], notes, recs:recs.slice(0,4)});
   S.lastEvent = 'fin_lectura'; updatePanelRd();
 }
 
@@ -1166,27 +1188,27 @@ function finishMath(manualEnd){
   const worst = Object.entries(bad).sort((a,b) => b[1]-a[1])[0];
   const notes = [`Tu cálculo ${phr}.`, `Resolviste ${first} de ${D.length} cuentas a la primera, y tardaste unos ${Math.round(avgMs)} segundo${Math.round(avgMs)===1?'':'s'} en promedio.`];
   if (worst) notes.push(`Lo que más te costó fueron las ${opName[worst[0]]}.`); else notes.push('No tuviste cuentas difíciles.');
-  const fl = faceLines(fs); notes.push(...fl.notes);
+  const fl = S.pov ? {notes:[], recs:[]} : faceLines(fs); notes.push(...fl.notes);
   const recs = [];
   if (worst) recs.push(worst[0]==='+' ? 'Practicá completar hasta diez antes de sumar: 8 más 5 es 8 más 2, más 3.' : worst[0]==='-' ? 'Practicá contar hacia atrás con los dedos o en una recta numérica.' : 'Repasá las tablas del 2, 5 y 10, y pensalas como sumas repetidas.');
   recs.push(score >= 80 ? 'Probá el siguiente nivel.' : 'Hacé tres cuentas por día y decí el resultado en voz alta.');
   recs.push(...fl.recs);
   logRec('Matemáticas', '--cy', `Puntaje ${score}/100`);
-  showResult({title:'Resultado de matemáticas', label, score, chips:[['A la 1ª',`${first}/${D.length}`],['Tiempo',Math.round(avgMs)+' s'],['Trabadas',MATH.stucks],['Atención',pct(fs.att)+'%']], notes, recs:recs.slice(0,4)});
+  showResult({title:'Resultado de matemáticas', label, score, chips:[['A la 1ª',`${first}/${D.length}`],['Tiempo',Math.round(avgMs)+' s'],['Trabadas',MATH.stucks],...(S.pov ? [] : [['Atención',pct(fs.att)+'%']])], notes, recs:recs.slice(0,4)});
   S.lastEvent = 'fin_mate'; updatePanelRd();
 }
 
 /* ================= cámara y modelos ================= */
 const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
-async function loadModels(){
+async function loadModels(pov){
   const mod = await import(CDN + '/vision_bundle.mjs');
   const files = await mod.FilesetResolver.forVisionTasks(CDN + '/wasm');
   const mk = (Cls, url, extra) => async () => {
     const o = d => ({baseOptions:{modelAssetPath:url, delegate:d}, runningMode:'VIDEO', ...extra});
     try { return await Cls.createFromOptions(files, o('GPU')); } catch(e){ return await Cls.createFromOptions(files, o('CPU')); }
   };
-  S.landmarker = await mk(mod.FaceLandmarker, 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', {numFaces:1, outputFaceBlendshapes:true})();
-  try { S.handLm = await mk(mod.HandLandmarker, 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', {numHands:1})(); }
+  S.landmarker = pov ? null : await mk(mod.FaceLandmarker, 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', {numFaces:1, outputFaceBlendshapes:true})();
+  try { S.handLm = await mk(mod.HandLandmarker, 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', {numHands:pov ? 2 : 1})(); }
   catch(e){ console.warn('Sin seguimiento de manos', e); S.handLm = null; }
 }
 function enterFsFromGesture(){ if ($('#chkFs').checked && !document.fullscreenElement && stage.requestFullscreen) stage.requestFullscreen().catch(() => {}); }
@@ -1196,12 +1218,13 @@ async function startCamera(){
   const msg = $('#introMsg');
   try{
     msg.textContent = 'Pidiendo acceso a la cámara…';
-    S.stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    S.stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal: S.pov ? 'environment' : 'user'}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    S.povMirror = (S.stream.getVideoTracks()[0].getSettings().facingMode || 'user') !== 'environment';   /* cámara trasera: sin espejo */
     video.srcObject = S.stream; await video.play();
     msg.textContent = 'Pidiendo acceso al micrófono…'; await probeMic(0);
-    msg.textContent = 'Cargando modelos de rostro y manos (≈12 MB)…';
-    await loadModels();
-    S.mode = 'cam'; begin(true);
+    msg.textContent = S.pov ? 'Cargando el modelo de manos…' : 'Cargando modelos de rostro y manos (≈12 MB)…';
+    await loadModels(S.pov);
+    S.mode = 'cam'; begin(!S.pov);
   }catch(e){
     console.error(e);
     if (S.stream) S.stream.getTracks().forEach(t=>t.stop());
@@ -1209,15 +1232,15 @@ async function startCamera(){
     $('#btnCam').disabled = !$('#consent').checked; $('#btnDemo').disabled = false;
   }
 }
-async function startDemo(){ enterFsFromGesture(); S.mode = 'demo'; $('#demoPanel').style.display = 'block'; probeMic(0); begin(false); }
+async function startDemo(){ enterFsFromGesture(); S.mode = 'demo'; $('#demoPanel').style.display = S.pov ? 'none' : 'block'; probeMic(0); begin(false); }
 function begin(calibrate){
   $('#intro').classList.remove('show');
   S.running = true; S.t0 = performance.now(); S.rows = []; S.items = []; S.recs = []; $('#log').innerHTML = ''; S.menuShown = false;
   S.perclos = []; S.yawns = []; S.base = {}; S.since = {}; S.lastFired = {}; S.lastEvent = '';
-  $('#dot').classList.add('on'); $('#aura').classList.add('on');
+  $('#dot').classList.add('on'); $('#aura').classList.toggle('on', !S.pov);
   $('#hudStatus').textContent = S.mode==='cam' ? 'Lentes activos' : 'Lentes activos · demo';
   ['btnStop','btnCsv','btnMenu'].forEach(id => $('#'+id).disabled = false); $('#btnRecal').disabled = S.mode!=='cam';
-  S.handsOn = $('#optHands').checked;
+  S.handsOn = S.pov ? true : $('#optHands').checked; S.lastHands = [];
   requestAnimationFrame(loop);
   if (calibrate) startCalib(); else goHome(true);
 }
@@ -1236,6 +1259,65 @@ $('#btnStop').onclick = stopSession; $('#btnMenu').onclick = () => S.running && 
 $('#consent').onchange = e => $('#btnCam').disabled = !e.target.checked;
 $('#btnCam').onclick = startCamera; $('#btnDemo').onclick = startDemo;
 $('#optHands').onchange = e => { S.handsOn = e.target.checked; if (!S.handsOn) handStep(null,0); };
+
+
+/* ================= vista en primera persona (cámara hacia afuera, manos como puntero) ================= */
+S.pov = false; S.povMirror = true; S.lastHands = []; S.fingN = 0;
+function setView(pov){
+  if (S.running) return;
+  S.pov = !!pov; document.body.classList.toggle('pov', S.pov); stage.classList.toggle('pov', S.pov);
+  $('#povLink').textContent = S.pov ? '← Vista del alumno' : 'Primera persona →';
+  $('#introTitle').textContent = S.pov ? 'Mirá tus manos' : 'Ponete los lentes';
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('sel', (b.dataset.v==='pov') === S.pov));
+  try { const u = new URL(location.href); if (S.pov) u.searchParams.set('pov','1'); else u.searchParams.delete('pov'); history.replaceState(null, '', u); } catch(_){}
+}
+$('#povLink').onclick = () => setView(!S.pov);
+document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => setView(b.dataset.v==='pov'));
+const fdist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+/* dedos extendidos: [pulgar, índice, medio, anular, meñique] */
+function fingerFlags(lm){
+  const w = lm[0], size = fdist(lm[0], lm[9]) || 1;
+  const f = [[8,6],[12,10],[16,14],[20,18]].map(([t,p]) => fdist(lm[t], w) > fdist(lm[p], w)*1.12);
+  const thumb = fdist(lm[4], lm[17]) > fdist(lm[3], lm[17])*1.05 && fdist(lm[4], lm[5]) > size*.45;
+  return [thumb, ...f];
+}
+const countFingers = lm => fingerFlags(lm).filter(Boolean).length;
+const isPointing = lm => { const f = fingerFlags(lm); return f[1] && !f[2] && !f[3] && !f[4]; };
+const BONES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+const povPt = (p, f) => ({x: f.ox + (S.povMirror ? 1-p.x : p.x)*f.dw, y: f.oy + p.y*f.dh});
+function drawHandsPov(f){
+  (S.lastHands||[]).forEach(h => {
+    const P = h.map(p => povPt(p, f));
+    ctx.save(); ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(255,230,180,.5)'; ctx.lineWidth = 2.5; ctx.shadowColor = '#ffb86b'; ctx.shadowBlur = 12;
+    ctx.beginPath(); BONES.forEach(([a,b]) => { ctx.moveTo(P[a].x, P[a].y); ctx.lineTo(P[b].x, P[b].y); }); ctx.stroke();
+    ctx.fillStyle = '#fff'; [4,8,12,16,20].forEach(i => { ctx.beginPath(); ctx.arc(P[i].x, P[i].y, i===8 ? 7 : 4.5, 0, 7); ctx.fill(); });
+    ctx.restore();
+  });
+}
+function drawPovWorld(){
+  const w = cv.width, h = cv.height, g = ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'#3a342e'); g.addColorStop(1,'#1c1915'); ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+  const bh = h/4.2, bw = w/3.2; ctx.lineWidth = 2;
+  for (let r=-1; r<6; r++) for (let c=-1; c<5; c++){
+    const x = c*bw + (r%2 ? bw/2 : 0) - 20, y = r*bh - 10, v = ((r*7 + c*13) % 5)*3;
+    ctx.fillStyle = `rgb(${92+v},${86+v},${76+v})`; ctx.strokeStyle = 'rgba(20,16,12,.55)'; ctx.fillRect(x, y, bw, bh); ctx.strokeRect(x, y, bw, bh);
+  }
+}
+function fingerStep(now){
+  const el = $('#fing'), q = MATH.q, can = S.pov && MATH.active && q && !q.done && !MATH.busy && A.screen==='math' && (S.lastHands||[]).length && S.fingN >= 2;
+  if (!can){ FING.n = -1; el.classList.remove('show'); return; }
+  if (S.fingN !== FING.n){ FING.n = S.fingN; FING.t = now; FING.done = false; }
+  const prog = clamp((now - FING.t)/1400);
+  el.classList.add('show'); el.style.setProperty('--p', Math.round(prog*100)); el.querySelector('b').textContent = S.fingN;
+  if (prog >= 1 && !FING.done){ FING.done = true; const b = hud.querySelector(`#mOpts [data-v="${S.fingN}"]`); if (b) b.click(); }
+}
+const FING = {n:-1, t:0, done:false};
+function povStep(now){
+  const hs = S.handsOn ? (S.lastHands||[]) : [];
+  S.fingN = hs.reduce((a,h) => a + countFingers(h), 0);
+  handStep(hs.find(isPointing) || hs[0] || null, now);
+  fingerStep(now);
+}
+setView(new URLSearchParams(location.search).get('pov') === '1');
 
 /* ---------- pantalla completa y escala del HUD ---------- */
 function toggleFs(){
@@ -1384,7 +1466,9 @@ function handStep(lm, now){
     handEl.style.display = 'none'; HAND.vis = false; HAND.pinch = false;
     if (HAND.hover) HAND.hover.classList.remove('hover'); HAND.hover = null; handEl.querySelector('i').style.setProperty('--p',0); return;
   }
-  const tx = clamp(((1-lm[8].x)-.5)*HAND.GAIN+.5), ty = clamp((lm[8].y-.5)*HAND.GAIN+.5);
+  let tx, ty;
+  if (S.pov){ const f = fitInfo(), q = povPt(lm[8], f); tx = clamp(q.x/cv.width); ty = clamp(q.y/cv.height); }   /* el cursor queda sobre la yema del dedo */
+  else { tx = clamp(((1-lm[8].x)-.5)*HAND.GAIN+.5); ty = clamp((lm[8].y-.5)*HAND.GAIN+.5); }
   if (!HAND.vis){ HAND.fx = tx; HAND.fy = ty; } else { HAND.fx += (tx-HAND.fx)*.45; HAND.fy += (ty-HAND.fy)*.45; }
   HAND.vis = true;
   const rect = stage.getBoundingClientRect(), k = parseFloat(stage.style.getPropertyValue('--k')) || 1;
@@ -1403,7 +1487,7 @@ function handStep(lm, now){
     const t2 = btnAt(old.cx, old.cy) || target; if (t2) t2.click(); HAND.fired = true;
   }
   let prog = 0;
-  if ($('#optDwell').checked && target && !HAND.pinch && !HAND.fired){ prog = (now - HAND.hoverT)/1000; if (prog >= 1){ target.click(); HAND.fired = true; prog = 0; } }
+  if ($('#optDwell').checked && target && !HAND.pinch && !HAND.fired && !(S.pov && S.fingN >= 2)){ prog = (now - HAND.hoverT)/1000; if (prog >= 1){ target.click(); HAND.fired = true; prog = 0; } }
   handEl.querySelector('i').style.setProperty('--p', Math.round(clamp(prog)*100));
 }
 
@@ -1439,6 +1523,17 @@ function drawDemoFace(){
 }
 function drawFrame(haveFace){
   const w = cv.width, h = cv.height;
+  if (S.pov){
+    const f = fitInfo();
+    if (S.mode === 'cam'){
+      ctx.save(); ctx.filter = 'contrast(1.04) saturate(.95)';
+      if (S.povMirror){ ctx.translate(f.ox+f.dw, f.oy); ctx.scale(-1,1); ctx.drawImage(video, 0, 0, f.dw, f.dh); } else ctx.drawImage(video, f.ox, f.oy, f.dw, f.dh);
+      ctx.restore(); ctx.fillStyle = 'rgba(6,5,12,.16)'; ctx.fillRect(0,0,w,h);
+    } else drawPovWorld();
+    ctx.globalAlpha = .5; ctx.drawImage(vig, 0, 0, w, h); ctx.globalAlpha = 1;
+    if (S.handsOn) drawHandsPov(f);
+    return;
+  }
   if (S.mode === 'cam'){
     const f = fitInfo();
     ctx.save(); ctx.filter = 'saturate(.8) contrast(1.05) brightness(.92)'; ctx.translate(f.ox+f.dw, f.oy); ctx.scale(-1,1); ctx.drawImage(video, 0, 0, f.dw, f.dh); ctx.restore();
@@ -1542,6 +1637,15 @@ function loop(now){
   S.frames++; S.frameN++;
   if (now - S.fpsT > 1000){ S.fps = Math.round(S.frames*1000/(now-S.fpsT)); S.frames = 0; S.fpsT = now; S.handEvery = S.fps < 20 ? 2 : 1; }
 
+  if (S.pov){
+    if (S.mode === 'cam' && video.readyState >= 2 && video.currentTime !== S.lastVT){
+      S.lastVT = video.currentTime;
+      if (S.handLm && S.handsOn && S.frameN % S.handEvery === 0){ const ho = S.handLm.detectForVideo(video, now + .5); S.lastHands = ho.landmarks || []; }
+    }
+    drawFrame(false); povStep(now); rdTick(now); mathTick(now);
+    if (now - S.lastUI > 150){ S.lastUI = now; updateUI(now); }
+    return;
+  }
   let res = null, haveFace = false;
   if (S.mode === 'cam'){
     if (video.readyState >= 2 && video.currentTime !== S.lastVT){
