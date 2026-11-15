@@ -914,19 +914,29 @@ function setSource(src){
 }
 async function startCamera(){
   $('#btnStartCam').disabled=true;
+  let etapa='cámara';
   try{
     camMsg('Pidiendo acceso a la cámara…');
     S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
-    video.srcObject=S.stream;await video.play();
+    video.srcObject=S.stream;video.muted=true;
+    try{await video.play();}
+    catch(e){if(e&&e.name==='AbortError'){await new Promise(r=>setTimeout(r,400));await video.play();}else throw e;}
+    etapa='modelo';
     camMsg('Cargando modelo de rostros (≈4 MB)…');
     await loadModels();
     switchToCam();
     camMsg('Cámara activa. Cada rostro se calibra 4 s con cara neutra.');
   }catch(e){
-    console.error(e);
+    console.error(etapa,e);
     if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}
-    const blocked=e&&(e.name==='NotAllowedError'||e.name==='SecurityError');
-    camMsg(blocked?'No se pudo usar la cámara. Esta vista puede bloquearla: abrí el archivo en Chrome desde localhost (abrir-docentes.bat) y aceptá el permiso.':`No se pudo iniciar la cámara o el modelo (${e&&e.name||'error'}). Revisá permisos y conexión.`,true);
+    const n=e&&e.name||'error';
+    let m;
+    if(n==='NotAllowedError'||n==='SecurityError')m='No se pudo usar la cámara. Aceptá el permiso del navegador. Si ves esto en claude.ai, abrí la página publicada en Chrome.';
+    else if(etapa==='cámara'&&(n==='AbortError'||n==='NotReadableError'))m='La cámara está ocupada por otra pestaña o app (Lumen alumnos, Teams, Zoom, Meet). Cerrala y tocá Activar cámara de nuevo.';
+    else if(n==='NotFoundError'||n==='OverconstrainedError')m='No se encontró una cámara en este equipo.';
+    else if(etapa==='modelo')m=`No se pudo cargar el modelo de rostros (${n}). Revisá la conexión a internet y probá de nuevo.`;
+    else m=`No se pudo iniciar la cámara (${n}). Revisá permisos y probá de nuevo.`;
+    camMsg(m,true);
     $('#btnStartCam').disabled=!$('#consent').checked;
   }
 }
