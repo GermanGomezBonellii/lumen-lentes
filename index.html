@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0a0810">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22g%22%20cx%3D%22.34%22%20cy%3D%22.3%22%20r%3D%22.8%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%22.12%22%20stop-color%3D%22%23fff%22/%3E%3Cstop%20offset%3D%22.25%22%20stop-color%3D%22%23ffe9b8%22/%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%23ffb86b%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237a4bff%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2229%22%20fill%3D%22url%28%23g%29%22/%3E%3C/svg%3E">
 <title>Lumen · Lentes inteligentes de alfabetización (prototipo)</title>
 <style>
@@ -34,6 +35,15 @@ label.chk{display:flex;gap:8px;align-items:center;margin:6px 0}
 /* ---------- escenario: la lente ---------- */
 .stage{position:relative;background:#000;border-radius:30px;overflow:hidden;aspect-ratio:16/9;border:1px solid rgba(255,255,255,.1);box-shadow:0 0 60px rgba(255,170,90,.10),0 30px 80px rgba(0,0,0,.5)}
 .stage.fs{aspect-ratio:auto;border-radius:0;border:0;width:100vw;height:100vh}
+.stage.pfs{position:fixed;inset:0;z-index:60;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;border-radius:0;border:0}
+body.mobile{overflow:hidden;overscroll-behavior:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body.mobile .hud-btn,body.mobile .ico{touch-action:manipulation}
+.hud-btn{-webkit-tap-highlight-color:transparent}
+.stage.portrait .dock{gap:8px}
+.stage.portrait .hud-btn.round{width:46px;height:46px}
+.stage.portrait .home .hm-btns,.stage.portrait .opts{gap:8px}
+.stage.portrait .opts{grid-template-columns:repeat(2,1fr)}
+.stage.portrait .hud-btn.big{min-width:150px;min-height:110px}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hud{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:0 0;pointer-events:none;font-size:12px;letter-spacing:.08em;user-select:none}
 .hud>*{position:absolute}
@@ -242,7 +252,7 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
 <section>
   <div class="stage" id="stage">
     <canvas id="cv" width="1280" height="720"></canvas>
-    <video id="video" playsinline muted style="display:none"></video>
+    <video id="video" playsinline webkit-playsinline muted autoplay style="position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none"></video>
 
     <div class="hud" id="hud">
       <div class="aura" id="aura"></div>
@@ -1211,24 +1221,33 @@ async function loadModels(pov){
   try { S.handLm = await mk(mod.HandLandmarker, 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', {numHands:pov ? 2 : 1})(); }
   catch(e){ console.warn('Sin seguimiento de manos', e); S.handLm = null; }
 }
-function enterFsFromGesture(){ if ($('#chkFs').checked && !document.fullscreenElement && stage.requestFullscreen) stage.requestFullscreen().catch(() => {}); }
+function enterFsFromGesture(){ if ($('#chkFs').checked || MOBILE) enterFs(); }
 async function startCamera(){
   enterFsFromGesture();                                   // se pide dentro del clic para que el navegador lo permita
   $('#btnCam').disabled = true; $('#btnDemo').disabled = true;
   const msg = $('#introMsg');
   try{
     msg.textContent = 'Pidiendo acceso a la cámara…';
-    S.stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal: S.pov ? 'environment' : 'user'}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error(window.isSecureContext ? 'el navegador no ofrece cámara' : 'hace falta https'), {name:'SinCamara'});
+    const fm = {ideal: S.pov ? 'environment' : 'user'}, sz = MOBILE ? {width:{ideal:960}, height:{ideal:540}} : {width:{ideal:1280}, height:{ideal:720}};
+    const tries = [{video:{facingMode:fm, ...sz}, audio:false}, {video:{facingMode:fm}, audio:false}, {video:true, audio:false}];
+    let lastErr;
+    for (const c of tries){ try { S.stream = await navigator.mediaDevices.getUserMedia(c); break; } catch(e){ lastErr = e; if (e.name === 'NotAllowedError' || e.name === 'SecurityError') break; } }
+    if (!S.stream) throw lastErr || new Error('sin cámara');
     S.povMirror = (S.stream.getVideoTracks()[0].getSettings().facingMode || 'user') !== 'environment';   /* cámara trasera: sin espejo */
-    video.srcObject = S.stream; await video.play();
-    msg.textContent = 'Pidiendo acceso al micrófono…'; await probeMic(0);
+    video.muted = true; video.setAttribute('playsinline',''); video.srcObject = S.stream;
+    await Promise.race([video.play().catch(() => {}), new Promise(r => setTimeout(r, 2500))]);
+    for (let i = 0; i < 40 && !(video.videoWidth > 0); i++) await new Promise(r => setTimeout(r, 100));   /* espera el primer cuadro (iPhone) */
+    if (!(video.videoWidth > 0)) throw Object.assign(new Error('la cámara no entrega imagen'), {name:'SinImagen'});
+    msg.textContent = 'Pidiendo acceso al micrófono…'; await Promise.race([probeMic(0), new Promise(r => setTimeout(r, 6000))]);
     msg.textContent = S.pov ? 'Cargando el modelo de manos…' : 'Cargando modelos de rostro y manos (≈12 MB)…';
     await loadModels(S.pov);
     S.mode = 'cam'; begin(!S.pov);
   }catch(e){
     console.error(e);
     if (S.stream) S.stream.getTracks().forEach(t=>t.stop());
-    msg.textContent = 'No se pudo iniciar la cámara/modelos (' + (e.name||'error') + '). Revisá permisos y conexión, o usá el modo demo.';
+    const why = e.name === 'NotAllowedError' ? 'Permiso denegado: habilitá la cámara para este sitio en el navegador y recargá.' : e.name === 'NotFoundError' ? 'No se encontró una cámara.' : e.name === 'NotReadableError' ? 'La cámara está en uso por otra app.' : (e.message || '');
+    msg.textContent = 'No se pudo iniciar (' + (e.name||'error') + '). ' + why + ' Podés probar el modo demo.';
     $('#btnCam').disabled = !$('#consent').checked; $('#btnDemo').disabled = false;
   }
 }
@@ -1241,6 +1260,7 @@ function begin(calibrate){
   $('#hudStatus').textContent = S.mode==='cam' ? 'Lentes activos' : 'Lentes activos · demo';
   ['btnStop','btnCsv','btnMenu'].forEach(id => $('#'+id).disabled = false); $('#btnRecal').disabled = S.mode!=='cam';
   S.handsOn = S.pov ? true : $('#optHands').checked; S.lastHands = [];
+  try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(w => S.wake = w).catch(()=>{}); } catch(_){}
   requestAnimationFrame(loop);
   if (calibrate) startCalib(); else goHome(true);
 }
@@ -1320,16 +1340,38 @@ function povStep(now){
 setView(new URLSearchParams(location.search).get('pov') === '1');
 
 /* ---------- pantalla completa y escala del HUD ---------- */
-function toggleFs(){
-  if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-  else if (stage.requestFullscreen) stage.requestFullscreen().catch(() => setCaption('Tocá el botón ⛶ con el mouse o la tecla F para pantalla completa.', 'Aviso', 4000));
+const MOBILE = (matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 900) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+document.body.classList.toggle('mobile', MOBILE);
+const fsReal = () => document.fullscreenElement || document.webkitFullscreenElement;
+function setPseudoFs(on){ stage.classList.toggle('pfs', on); document.body.style.overflow = on ? 'hidden' : ''; fitHud(); }
+function enterFs(){
+  if (MOBILE) setPseudoFs(true);                           /* en el celu el escenario ocupa siempre toda la pantalla */
+  const rq = stage.requestFullscreen || stage.webkitRequestFullscreen;
+  if (rq && !fsReal()){
+    try { const pr = rq.call(stage); if (pr && pr.then) pr.then(() => { try { screen.orientation.lock('landscape').catch(()=>{}); } catch(_){} }).catch(() => { if (!MOBILE) setPseudoFs(true); }); }
+    catch(_){ setPseudoFs(true); }
+  } else if (!rq && !fsReal()) setPseudoFs(true);          /* iPhone: sin API de pantalla completa → pantalla completa simulada */
 }
+function exitFs(){
+  if (fsReal()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  if (!MOBILE) setPseudoFs(false);
+  try { screen.orientation.unlock(); } catch(_){}
+}
+function toggleFs(){ (fsReal() || (!MOBILE && stage.classList.contains('pfs'))) ? exitFs() : enterFs(); }
+if (MOBILE) setPseudoFs(true);
 $('#btnFs').onclick = toggleFs;
 function fitHud(){
-  const r = stage.getBoundingClientRect(); const k = clamp(r.width/900, .7, 3);
+  const r = stage.getBoundingClientRect(); if (!r.width || !r.height) return;
+  const land = r.width >= r.height;
+  const k = MOBILE ? clamp(land ? Math.min(r.width/900, r.height/450) : r.width/470, .45, 3) : clamp(r.width/900, .7, 3);
+  stage.classList.toggle('portrait', MOBILE && !land);
+  /* el lienzo copia la proporción de la pantalla, así el cursor de la mano coincide con lo que se ve */
+  const cw = land ? 1280 : Math.round(1280*r.width/r.height), ch = land ? Math.round(1280*r.height/r.width) : 1280;
+  if (Math.abs(cv.width-cw) > 2 || Math.abs(cv.height-ch) > 2){ cv.width = cw; cv.height = ch; }
   hud.style.width = (r.width/k) + 'px'; hud.style.height = (r.height/k) + 'px'; hud.style.transform = `scale(${k})`; stage.style.setProperty('--k', k);
 }
-document.addEventListener('fullscreenchange', () => { stage.classList.toggle('fs', document.fullscreenElement === stage); fitHud(); });
+const onFsChange = () => { stage.classList.toggle('fs', fsReal() === stage); fitHud(); };
+document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
 new ResizeObserver(fitHud).observe(stage); window.addEventListener('resize', fitHud); fitHud();
 
 /* ================= demo: señales simuladas ================= */
