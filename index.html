@@ -240,6 +240,36 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
 .fing.show{display:grid}
 .fing::before{content:"";position:absolute;inset:5px;border-radius:50%;background:rgba(8,6,14,.82)}
 .fing b{position:relative;font:300 28px var(--f)}
+
+/* ===== v6: interfaz infantil sin emociones, botón de ayuda, nivel 0, panel final simple ===== */
+.aura,.strip,.faces,.fils,.hm-state,.rface,#gauges{display:none!important}
+.helpbuddy{position:absolute;left:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:72px;height:72px;border-radius:50%;padding:0;display:none;align-items:center;justify-content:center;background:rgba(255,235,190,.16);border:1.5px solid rgba(255,217,138,.55);z-index:6;pointer-events:auto}
+.helpbuddy.show{display:flex}
+.helpbuddy svg{width:56px;height:56px;overflow:visible}
+.helpbuddy .arm{transform-box:fill-box;transform-origin:50% 100%;animation:buddyWave 3.2s ease-in-out infinite}
+.helpbuddy .bd{animation:buddyBob 3.2s ease-in-out infinite;transform-origin:50% 100%}
+@keyframes buddyWave{0%,70%,100%{transform:rotate(0)}80%{transform:rotate(-22deg)}90%{transform:rotate(8deg)}}
+@keyframes buddyBob{50%{transform:translateY(-1.5px)}}
+.helpbuddy.sent{background:rgba(109,247,208,.22);border-color:var(--att)}
+.helpbuddy.sent .arm,.helpbuddy.sent .bd{animation:none}
+.helpbuddy small{position:absolute;left:78px;bottom:6px;white-space:nowrap;font:600 12px var(--f);letter-spacing:.08em;color:#fff;background:rgba(8,6,14,.72);padding:5px 10px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none}
+.helpbuddy:hover small,.helpbuddy.hover small,.helpbuddy.sent small{opacity:1}
+@media (prefers-reduced-motion:reduce){.helpbuddy .arm,.helpbuddy .bd{animation:none}}
+.stage.portrait .helpbuddy{width:60px;height:60px}.stage.portrait .helpbuddy svg{width:46px;height:46px}
+.kidres{text-align:center}
+.kidres .stars{font-size:clamp(38px,7vw,64px);letter-spacing:.12em;margin:4px 0 6px;filter:drop-shadow(0 0 18px rgba(255,217,138,.55))}
+.kidres .stars i{font-style:normal;opacity:.22}.kidres .stars i.on{opacity:1}
+.kidres .msg{font:300 clamp(20px,3.4vw,30px) var(--f);margin:6px 0 10px}
+.kidres .next{font:400 clamp(14px,2vw,18px) var(--f);opacity:.9;margin:4px 0}
+.kidres .care{font:300 clamp(13px,1.8vw,16px) var(--f);opacity:.75;margin:8px 0 0}
+.fing small{position:absolute;left:78px;top:50%;transform:translateY(-50%);white-space:nowrap;font:400 13px var(--f);letter-spacing:.08em;background:rgba(8,6,14,.78);padding:6px 12px;border-radius:12px}
+.fing small:empty{display:none}
+.fing.ok{box-shadow:0 0 0 4px var(--att),0 0 40px var(--att)}
+.fingHint{position:absolute;left:50%;bottom:calc(112px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font:400 14px var(--f);letter-spacing:.1em;background:rgba(8,6,14,.7);padding:6px 14px;border-radius:14px;display:none;z-index:5;white-space:nowrap}
+.fingHint.show{display:block}
+.dbg{position:absolute;right:8px;bottom:8px;font:10px var(--mono);background:rgba(0,0,0,.6);color:#9f9;padding:4px 6px;border-radius:6px;z-index:9;pointer-events:none;display:none;white-space:pre}
+.dbg.on{display:block}
+.panelnote{font-size:11px;letter-spacing:.06em;opacity:.7;margin:-4px 0 8px}
 </style>
 </head>
 <body>
@@ -285,7 +315,8 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
           <div class="q" id="mQ">—</div>
           <div class="opts" id="mOpts"></div>
         </div>
-        <div class="fing" id="fing"><b>0</b></div>
+        <div class="fing" id="fing"><b>0</b><small></small></div>
+        <div class="fingHint" id="fingHint">Mostrá la cantidad con tus dedos y mantené quietas las manos</div>
       </div>
 
       <!-- inicio: la cámara muestra cómo estás -->
@@ -298,6 +329,10 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
           <small>INICIAR</small>
         </div>
       </div>
+      <button class="hud-btn helpbuddy" id="helpBuddy" data-act="help" aria-label="Pedir ayuda a mi profe" title="Pedir ayuda a mi profe">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><g class="bd"><ellipse cx="32" cy="58" rx="16" ry="3" fill="#000" opacity=".25"/><circle cx="18" cy="16" r="7" fill="#ffd98a"/><circle cx="46" cy="16" r="7" fill="#ffd98a"/><circle cx="18" cy="16" r="3.2" fill="#ffb7a8"/><circle cx="46" cy="16" r="3.2" fill="#ffb7a8"/><ellipse cx="32" cy="38" rx="20" ry="18" fill="#ffd98a"/><ellipse cx="32" cy="44" rx="11" ry="8" fill="#fff3d6"/><circle cx="25" cy="34" r="2.8" fill="#2b1d16"/><circle cx="39" cy="34" r="2.8" fill="#2b1d16"/><circle cx="24" cy="33" r=".9" fill="#fff"/><circle cx="38" cy="33" r=".9" fill="#fff"/><ellipse cx="32" cy="40" rx="2.6" ry="1.9" fill="#7a4b2b"/><path d="M28.5 43.5 Q32 47 35.5 43.5" stroke="#7a4b2b" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="19" cy="41" r="3" fill="#ffb7a8" opacity=".7"/><circle cx="45" cy="41" r="3" fill="#ffb7a8" opacity=".7"/><g class="arm"><ellipse cx="53" cy="40" rx="4.5" ry="7" fill="#ffd98a" transform="rotate(-20 53 40)"/></g></g></svg>
+        <small id="helpTxt">¿Necesitás ayuda?</small>
+      </button>
       <div class="strip" id="strip"><i class="sd"></i><b id="stState">—</b></div>
 
       <div class="heard" id="heard"></div>
@@ -305,6 +340,9 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
       <div class="caption" id="caption"></div>
       <div class="dock" id="dock"></div>
 
+      <div class="center light" id="checkin" role="dialog" aria-live="polite">
+        <div class="box"><h3 class="xl" id="ciTitle"></h3><p class="diag" id="ciTip" style="margin:0 0 16px;text-align:center"></p><div class="row" id="ciBtns"></div></div>
+      </div>
       <!-- menú del asistente -->
       <div class="center light" id="menu">
         <div class="box">
@@ -340,17 +378,18 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
       <div class="center" id="result">
         <div class="box wide">
           <h3 id="resTitle">Resultado</h3>
-          <div class="rtop">
+          <div class="kidres" id="kidRes"><div class="stars" id="kidStars"></div><p class="msg" id="kidMsg"></p><p class="next" id="kidNext"></p><p class="care" id="kidCare"></p></div>
+          <div class="rtop" style="display:none">
             <div class="sring" id="sring"><b id="resScore">0</b></div>
             <div class="rlabel"><p id="resLabel"></p><div class="res" id="resChips"></div></div>
           </div>
-          <div class="rface">
+          <div class="rface" style="display:none">
             <div class="ribbon" id="resRibbon"></div>
             <div class="rleg" id="resLeg"></div>
             <div class="dials" id="resBars"></div>
           </div>
-          <p class="diag" id="resText"></p>
-          <ul class="recs" id="resRecs"></ul>
+          <p class="diag" id="resText" style="display:none"></p>
+          <ul class="recs" id="resRecs" style="display:none"></ul>
           <div class="row">
             <button class="hud-btn prim" data-act="again">Repetir</button>
             <button class="hud-btn" data-act="menu">Cambiar</button>
@@ -384,6 +423,7 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
 <aside>
   <div class="card emo">
     <h2>Estado en tiempo real</h2>
+    <p class="panelnote">Panel docente · estimación orientativa, no se muestra al niño</p>
     <div class="mood"><strong id="mood">—</strong><small>emoción dominante</small></div>
     <div class="metric"><span>Atención</span><div class="track"><i id="m-att" style="background:var(--att)"></i></div><b id="v-att">—</b></div>
     <div class="metric"><span>Fatiga / estrés</span><div class="track"><i id="m-fat" style="background:var(--fat)"></i></div><b id="v-fat">—</b></div>
@@ -402,13 +442,14 @@ body.pov .emo,body.pov #demoPanel{display:none!important}
     <label class="chk"><input type="checkbox" id="chkBarge"> <span class="note" style="margin:0">Escuchar mientras la asistente habla (solo con auriculares)</span></label>
     <select id="selLang" hidden><option value="es-AR">Español (Argentina)</option></select>
     <pre class="note" id="micDiag" style="white-space:pre-wrap;font:11px var(--mono);margin:8px 0 0">—</pre>
+    <p class="note" id="handDiag" style="font:11px var(--mono);margin:6px 0 0">manos: —</p>
     <p class="note warn" id="fileWarn2" style="display:none">⚠ Estás en file://: Chrome bloquea el reconocimiento de voz. Usá <b>abrir-lumen.bat</b> o GitHub Pages.</p>
   </div>
 
   <div class="card">
     <h2>Práctica</h2>
     <div class="row">
-      <select id="selLevel" aria-label="Nivel"><option value="1">Nivel 1</option><option value="2">Nivel 2</option><option value="3">Nivel 3</option></select>
+      <select id="selLevel" aria-label="Nivel"><option value="0">Nivel 0 · Dedos (1 a 10)</option><option value="1" selected>Nivel 1</option><option value="2">Nivel 2</option><option value="3">Nivel 3</option></select>
       <select id="selSrc" aria-label="Registro de la lectura">
         <option value="voice">Lectura: por voz</option><option value="manual">Lectura: moderador</option><option value="sim">Lectura: lector simulado</option>
       </select>
@@ -496,6 +537,24 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
 const pickOne = arr => arr[Math.floor(Math.random()*arr.length)];
 const listJoin = a => a.length<2 ? a.join('') : a.slice(0,-1).join(', ') + ' y ' + a[a.length-1];
+
+/* ================= canal alumno ↔ docente (mismo navegador y mismo sitio; nada sale a internet) ================= */
+const BUS = (() => {
+  const KEY = 'lumen:bus', LOG = 'lumen:log';
+  let ch = null; try { ch = new BroadcastChannel('lumen-bus'); } catch(_){}
+  const sid = (() => { try { let v = sessionStorage.getItem('lumen:sid'); if (!v){ v = 'A' + Math.random().toString(36).slice(2,6).toUpperCase(); sessionStorage.setItem('lumen:sid', v); } return v; } catch(_){ return 'A0000'; } })();
+  const subs = [];
+  const name = () => ($('#pid') && $('#pid').value.trim()) || ('Alumno ' + sid.slice(1));
+  function send(type, data){
+    const m = {v:1, src:'real', from:'student', sid, name:name(), type, ts:Date.now(), ...data};
+    try { ch && ch.postMessage(m); } catch(_){}
+    try { const a = JSON.parse(localStorage.getItem(LOG)||'[]'); a.push(m); while (a.length>200) a.shift(); localStorage.setItem(LOG, JSON.stringify(a)); localStorage.setItem(KEY, JSON.stringify(m)); } catch(_){}
+  }
+  const onMsg = m => { if (m && m.from==='teacher' && (!m.sid || m.sid===sid || m.sid==='*')) subs.forEach(f => f(m)); };
+  if (ch) ch.onmessage = e => onMsg(e.data);
+  addEventListener('storage', e => { if (e.key==='lumen:to-student' && e.newValue){ try { onMsg(JSON.parse(e.newValue)); } catch(_){} } });
+  return {sid, name, send, on:f => subs.push(f)};
+})();
 const isFile = location.protocol === 'file:';
 if (isFile){ $('#fileWarn').style.display = 'block'; $('#fileWarn2').style.display = 'block'; }
 
@@ -667,6 +726,7 @@ const micErrText = k => ({
   network:'El reconocimiento de voz necesita conexión a internet.',
   loop:'El reconocimiento de voz se cortó varias veces seguidas.',
   deaf:'El reconocedor de voz del navegador escucha pero no devuelve texto. Revisá en Windows: Configuración > Privacidad > Voz > "Reconocimiento de voz en línea", y que no haya VPN/firewall bloqueándolo. Mientras tanto usá el modo manual o simulado.',
+  noaudio:'El navegador inició el reconocimiento pero no recibe audio del micrófono. Cerrá otras pestañas o apps que lo usen (Teams, Zoom, Discord), elegí el micrófono correcto en Windows y tocá Reintentar.',
   noengine:'Este navegador no trae el motor de reconocimiento de voz (pasa en el navegador integrado de la app de escritorio). Abrí http://localhost:8000 en Chrome o Edge.'
 }[k] || ('Error de micrófono: ' + k));
 function renderMicDiag(){
@@ -703,12 +763,19 @@ async function probeMic(ms=0){
 }
 function killRec(){ clearTimeout(MIC.deafT); const r = MIC.rec; MIC.rec = null; if (r){ r.onend = r.onresult = r.onerror = null; try{ r.abort(); }catch(_){} } }
 function startRec(){
-  if (MIC.rec || MIC.fatal || MIC.paused || !MIC.want) return;
+  if (MIC.rec || MIC.fatal || MIC.paused || MIC.testing || !MIC.want) return;
   if (!SR){ micFatal('unsupported'); return; }
   const r = new SR(); r.lang = $('#selLang').value; r.continuous = true; r.interimResults = true; r.maxAlternatives = 3;
   MIC.rec = r; const sess = ++MIC.session; const t0 = performance.now();
-  r.onstart = () => { MIC.skip = 0; MIC.lastLen = 0; MIC.swapIdx = -1; MIC.startedAt = performance.now(); micEv('start'); if (!MIC.paused) setOrb('listening'); };
-  r.onaudiostart = () => micEv('audiostart');
+  const noAudioT = () => setTimeout(() => {
+    if (MIC.rec !== r || MIC.fatal || MIC.paused || MIC.ev.audiostart) return;
+    MIC.noAud = (MIC.noAud||0) + 1;
+    if (MIC.noAud > 2){ micFatal('noaudio'); return; }
+    $('#micMsg').className = 'note bad'; $('#micMsg').textContent = 'No llega audio al reconocedor; reinicio… (' + MIC.noAud + '/2)';
+    killRec(); MIC.ev = {}; setTimeout(startRec, 300);
+  }, 4000);
+  r.onstart = () => { noAudioT(); MIC.skip = 0; MIC.lastLen = 0; MIC.swapIdx = -1; MIC.startedAt = performance.now(); micEv('start'); if (!MIC.paused) setOrb('listening'); };
+  r.onaudiostart = () => { MIC.noAud = 0; micEv('audiostart'); };
   r.onsoundstart = () => { micEv('soundstart'); orbLevel(.5); };
   r.onspeechstart = () => { micEv('speechstart'); orbLevel(1); if (!MIC.heardAt) MIC.heardAt = performance.now(); clearTimeout(MIC.deafT);
     MIC.deafT = setTimeout(() => { if (MIC.rec !== r || MIC.fatal) return;
@@ -751,14 +818,15 @@ function listen(mode, handler){
 }
 function stopListen(){ MIC.want = false; MIC.mode = null; MIC.handler = null; killRec(); if (A.orb==='listening') setOrb('idle'); }
 function pauseListen(){ MIC.paused = true; killRec(); }
-function resumeListen(){ MIC.paused = false; if (MIC.want) startRec(); }
+function resumeListen(){ MIC.paused = false; if (MIC.want && !MIC.testing) startRec(); }
 async function runMicTest(){
   const m = $('#micMsg'); m.className = 'note'; m.textContent = 'Paso 1/2: permiso y nivel. Hablá ahora…';
-  pauseListen();   /* un solo reconocedor a la vez */
+  MIC.testing = true; pauseListen();   /* un solo reconocedor a la vez: nada más arranca durante la prueba */
+  const endTest = () => { MIC.testing = false; resumeListen(); };
   const p = await probeMic(3000);
-  if (!p.ok){ resumeListen(); m.className = 'note bad'; m.textContent = MIC.streamErr && MIC.streamErr.name==='NotFoundError' ? micErrText('nomic') : (isFile ? micErrText('insecure') : micErrText('denied')); return; }
-  if (p.peak < .05){ resumeListen(); m.className = 'note bad'; m.textContent = `Paso 1: el micrófono “${p.label}” casi no capta sonido (nivel ${pct(p.peak)} %). Revisá el micrófono predeterminado de Windows y el volumen.`; return; }
-  if (!SR){ resumeListen(); m.className = 'note bad'; m.textContent = micErrText('unsupported'); return; }
+  if (!p.ok){ endTest(); m.className = 'note bad'; m.textContent = MIC.streamErr && MIC.streamErr.name==='NotFoundError' ? micErrText('nomic') : (isFile ? micErrText('insecure') : micErrText('denied')); return; }
+  if (p.peak < .05){ endTest(); m.className = 'note bad'; m.textContent = `Paso 1: el micrófono “${p.label}” casi no capta sonido (nivel ${pct(p.peak)} %). Revisá el micrófono predeterminado de Windows y el volumen.`; return; }
+  if (!SR){ endTest(); m.className = 'note bad'; m.textContent = micErrText('unsupported'); return; }
   m.textContent = `Paso 1 ok (“${p.label}”). Paso 2/2: reconocimiento. Decí “hola, probando uno, dos, tres”…`;
   MIC.ev = {}; MIC.lastText = ''; MIC.evLast = ''; renderMicDiag();
   const r = new SR(); r.lang = $('#selLang').value; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
@@ -777,10 +845,10 @@ async function runMicTest(){
   };
   try{ r.start(); }catch(_){}
   setTimeout(() => { try{ r.stop(); }catch(_){} }, 9000);
-  setTimeout(resumeListen, 9600);
+  setTimeout(endTest, 9600);
 }
 $('#btnMicTest').onclick = runMicTest;
-$('#btnMicReset').onclick = async () => { MIC.fatal = null; $('#micMsg').className = 'note'; $('#micMsg').textContent = 'Reintentando…'; await runMicTest(); if (A.screen==='menu'||A.screen==='result'){ A.cmdDone = false; listen('cmd', routeCmd); } };
+$('#btnMicReset').onclick = async () => { MIC.fatal = null; MIC.noAud = 0; $('#micMsg').className = 'note'; $('#micMsg').textContent = 'Reintentando…'; await runMicTest(); if (A.screen==='menu'||A.screen==='result'){ A.cmdDone = false; listen('cmd', routeCmd); } };
 
 /* ================= botones del HUD y acciones ================= */
 const IC = {
@@ -809,7 +877,9 @@ const ACTIONS = {
   'pause': () => togglePause(), 'hear': () => speakWord(),
   'okw': () => manualMark('ok'), 'errw': () => manualMark('err'), 'stkw': () => manualStuck(),
   'end': () => { if (A.screen==='math') finishMath(true); else finishReading(true); },
-  'mans': b => answerMath(+b.dataset.v, b)
+  'mans': b => answerMath(+b.dataset.v, b),
+  'help': () => askHelp(),
+  'ci-go': () => CI.resolve && CI.resolve('go'), 'ci-pause': () => CI.resolve && CI.resolve('pause'), 'ci-go2': () => CI.resolve && CI.resolve('rest')
 };
 hud.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
@@ -819,7 +889,7 @@ hud.addEventListener('click', e => {
 
 /* ================= asistente: flujo de pantallas ================= */
 function showScreen(s){
-  A.screen = s;
+  A.screen = s; handLock(900);
   $('#menu').classList.toggle('show', s==='menu'); $('#result').classList.toggle('show', s==='result');
   $('#testHud').classList.toggle('show', s==='reading'); $('#mathHud').classList.toggle('show', s==='math');
   $('#home').classList.toggle('show', s==='home'); $('#hud').classList.toggle('at-home', s==='home'); $('#hud').classList.toggle('in-act', s==='reading' || s==='math'); $('#strip').classList.toggle('show', s==='reading' || s==='math');
@@ -839,13 +909,13 @@ function moodPhrase(){
 async function goHome(first, pre=''){
   haltActivities(); const my = ++A.flow; showScreen('home'); setDock('none'); tone('open'); A.cmdDone = false; S.menuShown = true; S.lastEvent = 'estado_inicial';
   listen('cmd', routeCmd);
-  await say(pre + (first ? (S.pov ? 'Hola, soy Lumen. Con el dedo índice tocá iniciar actividad, o decilo en voz alta.' : 'Hola, soy Lumen. Estoy atento a cómo te sentís. Cuando quieras empezar, tocá iniciar actividad o decilo en voz alta.') : 'Cuando quieras seguir, tocá iniciar actividad o decilo en voz alta.'), {tag:'Asistente'});
+  await say(pre + (first ? (S.pov ? 'Hola, soy Lumen. Con el dedo índice tocá iniciar actividad, o decilo en voz alta.' : 'Hola, soy Lumen. Cuando quieras empezar, tocá iniciar actividad o decilo en voz alta.') : 'Cuando quieras seguir, tocá iniciar actividad o decilo en voz alta.'), {tag:'Asistente'});
 }
 async function goMenu(first){
   haltActivities(); const my = ++A.flow; showScreen('menu'); setDock('none'); tone('open'); A.cmdDone = false; S.menuShown = true;
   S.lastEvent = 'menu_asistente';
   listen('cmd', routeCmd);   /* ya escucha mientras habla: se puede contestar sin esperar */
-  await say((S.pov ? '' : `Te noto ${moodPhrase()}. `) + '¿Hoy qué querés practicar? Podés decir matemáticas y números, o lectura.', {tag:'Asistente'});
+  await say('¿Hoy qué querés practicar? Podés decir matemáticas y números, o lectura.', {tag:'Asistente'});
   if (A.flow !== my) return;
   A.menuTimer = setTimeout(() => { if (A.flow===my && A.screen==='menu') say('Cuando quieras, decime matemáticas o lectura, o tocá una opción.', {tag:'Asistente'}); }, 20000);
 }
@@ -872,6 +942,23 @@ function act(a){
   else if (a==='menu') goMenu(false); else if (a==='home') goHome(false); else if (a==='finish') finishSession();
 }
 async function finishSession(){ goHome(false, 'Listo. Buen trabajo hoy. '); }
+
+
+/* ---------- botón de ayuda (personaje) ---------- */
+const HELP = {last:0, timer:null};
+function askHelp(){
+  const now = Date.now(), btn = $('#helpBuddy');
+  if (now - HELP.last < 20000){ setCaption('Ya le avisé a tu profe. Enseguida viene.', 'Ayuda', 3000); hideCaption(3500); return; }
+  HELP.last = now; btn.classList.add('sent'); $('#helpTxt').textContent = '¡Ya le avisé a tu profe!';
+  BUS.send('help', {where: A.screen, activity: A.screen==='math' ? 'matematica' : A.screen==='reading' ? 'lectura' : 'inicio', item: (A.screen==='math' && MATH.q) ? MATH.q.text : '', level: +$('#selLevel').value});
+  tone('ok'); say('¡Listo! Ya le avisé a tu profe. Enseguida viene a ayudarte.', {tag:'Ayuda'});
+  clearTimeout(HELP.timer); HELP.timer = setTimeout(() => { btn.classList.remove('sent'); $('#helpTxt').textContent = '¿Necesitás ayuda?'; }, 9000);
+}
+BUS.on(m => {
+  if (m.type==='setLevel'){ const v = String(clamp(+m.level,0,3)|0); $('#selLevel').value = v; logRec('Nivel', '--cy', 'El profe asignó el nivel ' + v); }
+  else if (m.type==='helpAck'){ HELP.last = 0; setCaption('Tu profe ya va para allá.', 'Ayuda', 4000); hideCaption(4500); say('Tu profe ya va para allá.', {tag:'Ayuda'}); }
+});
+$('#selLevel').addEventListener('change', () => BUS.send('level', {level:+$('#selLevel').value}));
 
 /* ---------- resultados y diagnóstico ---------- */
 const MOOD_COL = {Neutral:'#968fa6', Contento:'#ffd98a', Tristeza:'#7aa8ff', Enojo:'#ff5a7a', Sorpresa:'#6df7d0'};
@@ -909,18 +996,61 @@ function renderFaceReport(fs){
   const mo = fs.moods[0] ? `<span>Ánimo: ${esc(fs.moods[0][0])} ${pct(fs.moods[0][1])}%</span>` : '';
   $('#resLeg').innerHTML = st + mo;
 }
+function kidPractice(){
+  if (A.last==='math'){
+    const bad = {}; MATH.done.filter(d => d.st!=='ok').forEach(d => bad[d.q.op] = (bad[d.q.op]||0)+1);
+    const w = Object.entries(bad).sort((x,y) => y[1]-x[1])[0];
+    if (MATH.fixed) return 'La próxima vez podés seguir contando con los dedos.';
+    return w ? (w[0]==='+' ? 'Podés seguir practicando las sumas.' : w[0]==='-' ? 'Podés seguir practicando las restas.' : 'Podés seguir practicando las tablas.') : 'Podés probar cuentas nuevas cuando quieras.';
+  }
+  const hard = RD.words.filter(w => w.stuck || w.st==='err' || w.attempts>0);
+  return hard.length ? 'Podés seguir practicando leer palabras despacito, sílaba por sílaba.' : 'Podés probar un texto nuevo cuando quieras.';
+}
+/* consejos suaves rotativos: nunca dicen cómo se siente el niño; rotan sin repetirse seguidos durante la sesión */
+const SOFT_TIPS = ['Tomá un poquito de agua si querés.','Estirá las manos y los dedos un ratito.','Respirá hondo una vez, despacito.','Mirá algo lejano para descansar los ojos.','Acomodate en la silla como más cómodo te quede.','Sacudí las manos como si se las secaras.','Si querés, contá hasta cinco antes de seguir.','Mové un poco los hombros hacia arriba y hacia abajo.'];
+function nextTip(){ let i = 0; try { i = (+sessionStorage.getItem('lumen:tip') || 0); sessionStorage.setItem('lumen:tip', String(i + 1)); } catch(_){ i = (nextTip.n = (nextTip.n||0) + 1); } return SOFT_TIPS[i % SOFT_TIPS.length]; }
+/* pregunta contenedora: se ofrece una pausa sin nombrar ninguna emoción (solo tras varias cuentas o trabas seguidas, y pocas veces por actividad) */
+const CI = {resolve:null, mode:''};
+function askCheckin(kind){
+  return new Promise(resolve => {
+    const box = $('#checkin'), show = (title, tip, btns) => { $('#ciTitle').textContent = title; $('#ciTip').textContent = tip || ''; $('#ciBtns').innerHTML = btns; handLock(1200); };
+    cancelSpeech(); haltListenForCheckin();
+    const done = c => { box.classList.remove('show'); CI.resolve = null; BUS.send('checkin', {choice:c, activity:kind}); handLock(900); resolve(c); };
+    CI.resolve = c => {
+      if (c === 'go') return done('seguir');
+      show('Hacemos una pausa', nextTip(), '<button class="hud-btn big prim" data-act="ci-go2">Seguir</button>'); CI.mode = 'rest';
+      say('Muy bien, hacemos una pausa. ' + $('#ciTip').textContent + ' Cuando quieras, tocá seguir.', {tag:'Asistente'});
+      CI.resolve = c2 => done('pausa');
+    };
+    CI.mode = 'ask'; box.classList.add('show');
+    show('¿Querés seguir o hacemos una pausa?', '', '<button class="hud-btn big prim" data-act="ci-go">Seguir</button><button class="hud-btn big" data-act="ci-pause">Una pausa</button>');
+    say('¿Querés seguir o hacemos una pausa?', {tag:'Asistente'});
+    listen('cmd', info => { const t = norm2(info.latest); if (!t || !CI.resolve) return; if (CI.mode==='ask' && /pausa|descans|un momento/.test(t)) CI.resolve('pause'); else if (/segu|contin|dale|vamos|listo/.test(t)) CI.resolve(CI.mode==='ask' ? 'go' : 'rest'); });
+  });
+}
+function haltListenForCheckin(){ try { stopListen(); } catch(_){} }
+
 function showResult({title, label, score, chips, notes, recs}){
   const my = ++A.flow; showScreen('result'); setDock('none'); tone('done');
   A.cmdDone = false; listen('cmd', routeCmd);   /* se puede responder mientras la asistente habla */
-  $('#resTitle').textContent = title; $('#resScore').textContent = score; $('#sring').style.setProperty('--p', score); $('#resLabel').textContent = label;
+  const stars = score >= 80 ? 3 : score >= 55 ? 2 : 1;                                   /* siempre al menos una estrella */
+  const msg = stars===3 ? '¡Lo hiciste genial!' : stars===2 ? '¡Muy buen trabajo!' : '¡Gracias por practicar!';
+  const nxt = kidPractice(), care = nextTip();
+  $('#resTitle').textContent = '¡Terminaste!';
+  $('#kidStars').innerHTML = [1,2,3].map(i => `<i class="${i<=stars?'on':''}">★</i>`).join('');
+  $('#kidMsg').textContent = msg; $('#kidNext').textContent = nxt; $('#kidCare').textContent = care;
+  /* el detalle (puntaje, etiquetas, estimaciones) va solo al docente y a la tabla de la página */
+  $('#resScore').textContent = score; $('#sring').style.setProperty('--p', score); $('#resLabel').textContent = label;
   $('#resChips').className = 'res'; $('#resChips').innerHTML = chips.map(([k,v]) => `<div><small>${esc(k)}</small><b>${esc(v)}</b></div>`).join('');
   $('#resText').textContent = notes.join(' '); $('#resRecs').innerHTML = recs.slice(0,2).map(r => `<li>${esc(r)}</li>`).join('');
   renderFaceReport(faceSummary());
+  const fs = faceSummary();
+  BUS.send('result', {activity:A.last==='math'?'matematica':'lectura', level:A.last==='math'?MATH.level:RD.level, score, label, chips, notes, recs,
+    estimate:{att:+fs.att.toFixed(2), fru:+fs.fruPeak.toFixed(2), con:+fs.conPeak.toFixed(2), fat:+fs.fat.toFixed(2), mood:(fs.moods[0]||['Neutral'])[0], note:'estimación orientativa, no diagnóstico'}});
   logRec('Diagnóstico', '--cy', notes.join(' '));
   recs.forEach(r => logRec('Recomendación', '--ok', r));
   (async () => {
-    await sayLong(notes.join(' '), {tag:'Diagnóstico'}, () => A.flow === my); if (A.flow !== my) return;
-    await sayLong('Te recomiendo lo siguiente. ' + recs.join(' '), {tag:'Recomendación'}, () => A.flow === my); if (A.flow !== my) return;
+    await sayLong(msg + ' ' + nxt, {tag:'Asistente'}, () => A.flow === my); if (A.flow !== my) return;
     await say('¿Querés repetir, cambiar de actividad o volver al inicio?', {tag:'Asistente'});
   })();
 }
@@ -939,7 +1069,7 @@ function renderTest(){
 function stopTimers(){ RD.timers.forEach(t => { clearTimeout(t); clearInterval(t); }); RD.timers = []; }
 async function startReading(){
   haltActivities(); A.last = 'read'; const my = ++A.flow; showScreen('reading'); setDock('none');
-  RD.level = +$('#selLevel').value; RD.src = $('#selSrc').value;
+  RD.ci = false; RD.level = +$('#selLevel').value; RD.src = $('#selSrc').value;
   let note = '';
   if (RD.src==='voice' && (!SR || MIC.fatal)){ RD.src = 'manual'; note = ' El micrófono no está disponible, así que un moderador va a marcar la lectura.'; }
   RD.words = buildWords(LEVELS[RD.level].text); RD.idx = 0; RD.pauses = 0; RD.stucks = 0; RD.processed = 0; RD.sess = -1; RD.paused = false; RD.summary = null; RD.heard = []; RD.active = false;
@@ -1069,15 +1199,20 @@ function rdTick(now){
   w.fru = Math.max(w.fru, S.m.fru); w.con = Math.max(w.con, S.m.con);
   if (el > lim && !w.stuck){ w.stuck = true; w.help = true; RD.stucks++; onStuck(w); renderTest(); }
 }
+async function readingCheckin(){
+  if (!RD.active || A.screen !== 'reading') return; const my = A.flow;
+  if (!RD.paused) togglePause();
+  await askCheckin('lectura'); if (A.flow !== my || !RD.active) return;
+  if (RD.paused) togglePause();
+  if (RD.src==='voice') listen('read', readHandler);
+}
 function onStuck(w){
   const word = w.raw.replace(/[.,;:!?]/g,'');
   const s = w.syl.length>1 ? ` Probá de a sílabas: ${w.syl.join(', ')}.` : '';
-  let msg;
-  if (S.m.con > .4) msg = `Parece que «${word}» no se entiende bien.${s} Decí cada sílaba y después juntalas.`;
-  else if (S.m.fru > .4) msg = `Se nota la frustración con «${word}».${s} Respirá, sin apuro.`;
-  else msg = `Te quedaste en «${word}».${s} Tomate tu tiempo.`;
+  const msg = `Te quedaste en «${word}».${s} Tomate tu tiempo, sin apuro.`;
   S.lastEvent = 'trabada_' + norm(word);
   logRec('Se trabó', '--fat', msg); say(msg, {tag:'Ayuda'});
+  if (RD.stucks >= 2 && !RD.ci){ RD.ci = true; setTimeout(readingCheckin, 3500); }
   if (S.mode==='demo' && RD.src==='sim'){ setPreset(Math.random()<.5 ? 'Confundido':'Frustrado'); RD.timers.push(setTimeout(() => setPreset('Concentrado'), 3500)); }
 }
 function finishReading(manualEnd){
@@ -1107,7 +1242,8 @@ function finishReading(manualEnd){
 const MATH = {active:false, level:1, n:0, total:6, q:null, done:[], stucks:0, tapOnly:false};
 function genQ(level){
   let a, b, ans, op = Math.random()<.5 ? '+' : '-';
-  if (level===1){ if (op==='+'){ a=rnd(2,9); b=rnd(2,9); ans=a+b; } else { a=rnd(8,15); b=rnd(2,Math.min(9,a-1)); ans=a-b; } }
+  if (level===0){ if (op==='+'){ a=rnd(1,8); b=rnd(1,Math.min(9,10-a)); ans=a+b; } else { a=rnd(3,10); b=rnd(1,a-1); ans=a-b; } }   /* respuestas de 1 a 10, para mostrar con los dedos */
+  else if (level===1){ if (op==='+'){ a=rnd(2,9); b=rnd(2,9); ans=a+b; } else { a=rnd(8,15); b=rnd(2,Math.min(9,a-1)); ans=a-b; } }
   else if (level===2){ if (op==='+'){ a=rnd(11,39); b=rnd(5,29); ans=a+b; } else { a=rnd(21,60); b=rnd(6,Math.min(29,a-1)); ans=a-b; } }
   else { op='×'; a=pickOne([2,3,4,5,10]); b=rnd(2,10); ans=a*b; }
   const spoken = `${a} ${op==='+'?'más':op==='-'?'menos':'por'} ${b}`;
@@ -1115,22 +1251,23 @@ function genQ(level){
   if (op==='+') hint = a<10 && a+b>10 ? `Completá hasta diez: ${a} más ${10-a} es diez, y sumá lo que queda.` : 'Sumá primero las decenas y después las unidades.';
   else if (op==='-') hint = `Contá hacia atrás desde ${a}, ${b} pasos.`;
   else hint = `Pensalo como sumar ${a}, ${b} veces.`;
-  const ds = new Set(); [ans+1,ans-1,ans+2,ans-2,ans+10,ans-10,ans+a].forEach(x => { if (x>0 && x!==ans) ds.add(x); });
+  if (level===0) hint = op==='+' ? `Mostrá ${a} con los dedos y sumá ${b} más.` : `Mostrá ${a} con los dedos y bajá ${b}.`;
+  const ds = new Set(); (level===0 ? [ans+1,ans-1,ans+2,ans-2,ans+3,ans-3] : [ans+1,ans-1,ans+2,ans-2,ans+10,ans-10,ans+a]).forEach(x => { if (x>0 && x!==ans && (level>0 || x<=10)) ds.add(x); });
   const opts = [ans, ...[...ds].sort(() => Math.random()-.5).slice(0,3)].sort(() => Math.random()-.5);
-  return {a, b, op, ans, spoken, hint, text:`${a} ${op} ${b}`, opts, attempts:0, said:[], done:false, stuck:false, t0:0, att:0, fru:0, con:0};
+  return {a, b, op, ans, spoken, hint, fingers:level===0, text:`${a} ${op} ${b}`, opts, attempts:0, said:[], done:false, stuck:false, t0:0, att:0, fru:0, con:0};
 }
 async function startMath(){
   haltActivities(); A.last = 'math'; const my = ++A.flow; showScreen('math'); setDock('none');
-  Object.assign(MATH, {active:false, busy:false, level:+$('#selLevel').value, n:0, done:[], stucks:0, q:null, tapOnly: !SR || !!MIC.fatal});
-  ACT.on = false; ACT.kind = 'math'; ACT.face = []; ACT.i0 = S.items.length; S.lastEvent = 'intro_mate'; renderMath(); updatePanelRd();
-  await say('Muy bien. Vamos con números. Te voy a ir preguntando cuentas. ' + (MATH.tapOnly ? 'Tocá la respuesta correcta.' : 'Respondé en voz alta o tocá la respuesta.'), {tag:'Matemáticas'});
+  Object.assign(MATH, {errRun:0, ciN:0, lastCi:-9, active:false, busy:false, level:+$('#selLevel').value || 0, n:0, done:[], stucks:0, q:null, tapOnly: !SR || !!MIC.fatal});
+  MATH.fixed = MATH.level === 0; ACT.on = false; ACT.kind = 'math'; ACT.face = []; ACT.i0 = S.items.length; S.lastEvent = 'intro_mate'; renderMath(); updatePanelRd();
+  await say(MATH.fixed ? 'Muy bien. Vamos a contar con los dedos. Mostrame la respuesta con tus manos, de uno a diez.' : 'Muy bien. Vamos con números. Te voy a ir preguntando cuentas. ' + (MATH.tapOnly ? 'Tocá la respuesta correcta.' : 'Respondé en voz alta o tocá la respuesta.'), {tag:'Matemáticas'});
   if (A.flow !== my) return;
   MATH.active = true; ACT.on = true; setDock('math'); nextQ(my);
 }
 async function nextQ(my){
   if (A.flow !== my || !MATH.active) return;
   if (MATH.n >= MATH.total) return finishMath(false);
-  const q = genQ(MATH.level); MATH.q = q; MATH.n++; renderMath();
+  const q = genQ(MATH.level); MATH.q = q; MATH.n++; renderMath(); handLock(900); FING.n = -1;
   if (!MATH.tapOnly) listen('math', info => {
     if (!MATH.active || MATH.q !== q || q.done) return;
     const texts = [info.latest, ...(info.alts||[])];
@@ -1140,7 +1277,7 @@ async function nextQ(my){
     /* incorrecta solo si ya terminó de hablar y dijo claramente (palabra exacta o dígitos) otro número */
     if (info.final){ const ex = parseNums(info.latest); if (ex.length) answerMath(ex[ex.length-1]); }
   });
-  await say(`¿Cuánto es ${q.spoken}?`, {tag:'Matemáticas'});
+  await say(`¿Cuánto es ${q.spoken}?` + (q.fingers ? ' Mostralo con los dedos.' : ''), {tag:'Matemáticas'});
   if (A.flow !== my || MATH.q !== q || q.done) return;
   q.t0 = performance.now(); tone('ping'); S.lastEvent = 'pregunta_' + MATH.n;
 }
@@ -1152,28 +1289,31 @@ function renderMath(){
 }
 async function answerMath(val, btn){
   const q = MATH.q; if (!MATH.active || !q || q.done || MATH.busy) return;
-  const my = A.flow, ok = val === q.ans; q.attempts++; q.said.push(val);
+  const my = A.flow, ok = val === q.ans; if (q.fingers && !ok && q.attempts===0) say('Casi. Contá de nuevo con tus dedos.', {tag:'Matemáticas'}); q.attempts++; q.said.push(val);
   q.fru = Math.max(q.fru, S.m.fru); q.con = Math.max(q.con, S.m.con);
   if (ok){
     q.done = true; MATH.busy = true; q.ms = performance.now() - (q.t0 || performance.now()); q.att = S.m.att; btn && btn.classList.add('right');
     const optBtn = hud.querySelector(`#mOpts [data-v="${q.ans}"]`); optBtn && optBtn.classList.add('right');
     tone('ok'); pushMath(q, q.attempts===1 ? 'ok' : 'retry');
-    MATH.level = clamp(MATH.level + (q.attempts===1 && q.ms < 8000 ? 1 : q.attempts>1 ? -1 : 0), 1, 3) | 0;
+    if (!MATH.fixed) MATH.level = clamp(MATH.level + (q.attempts===1 && q.ms < 8000 ? 1 : q.attempts>1 ? -1 : 0), 1, 3) | 0;
     await say(pickOne(['¡Muy bien!','Correcto.','¡Eso es!','Perfecto.']), {tag:'Matemáticas'});
-    MATH.busy = false; nextQ(my);
+    MATH.errRun = 0; MATH.busy = false; nextQ(my);
   } else {
     tone('err'); btn && btn.classList.add('wrong'); S.lastEvent = 'respuesta_incorrecta';
     if (q.attempts >= 2){
       q.done = true; MATH.busy = true; q.ms = performance.now() - (q.t0 || performance.now()); q.att = S.m.att; pushMath(q, 'err');
-      MATH.level = clamp(MATH.level - 1, 1, 3);
+      if (!MATH.fixed) MATH.level = clamp(MATH.level - 1, 1, 3);
       const optBtn = hud.querySelector(`#mOpts [data-v="${q.ans}"]`); optBtn && optBtn.classList.add('right');
       await say(`No pasa nada. La respuesta era ${q.ans}.`, {tag:'Matemáticas'});
+      MATH.errRun++;
+      if (MATH.errRun >= 2 && MATH.ciN < 2 && MATH.n - MATH.lastCi >= 3 && A.flow === my){ MATH.ciN++; MATH.lastCi = MATH.n; MATH.errRun = 0; await askCheckin('matematica'); if (A.flow !== my) return; }
       MATH.busy = false; nextQ(my);
     } else say('Casi. Probá de nuevo.', {tag:'Matemáticas'});
   }
 }
 function pushMath(q, st){
   MATH.done.push({q, st});
+  BUS.send('progress', {activity:'matematica', level:MATH.level, item:q.text, st, attempts:q.attempts, ms:Math.round(q.ms||0), n:MATH.n, total:MATH.total});
   S.items.push({tipo:'matematica', nivel:MATH.level, fuente:MATH.tapOnly?'toque':'voz', n:MATH.n, item:q.text, estado:st, intentos:q.attempts, ms:Math.round(q.ms||0), pausa:+(q.ms>5000), trabada:+q.stuck, dicho:q.said.join(' '), att:q.att, fru:q.fru, con:q.con});
 }
 function mathTick(now){
@@ -1210,6 +1350,7 @@ function finishMath(manualEnd){
 
 /* ================= cámara y modelos ================= */
 const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const HAND_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 async function loadModels(pov){
   const mod = await import(CDN + '/vision_bundle.mjs');
   const files = await mod.FilesetResolver.forVisionTasks(CDN + '/wasm');
@@ -1218,7 +1359,7 @@ async function loadModels(pov){
     try { return await Cls.createFromOptions(files, o('GPU')); } catch(e){ return await Cls.createFromOptions(files, o('CPU')); }
   };
   S.landmarker = pov ? null : await mk(mod.FaceLandmarker, 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', {numFaces:1, outputFaceBlendshapes:true})();
-  try { S.handLm = await mk(mod.HandLandmarker, 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', {numHands:pov ? 2 : 1})(); }
+  try { HDBG.delegate = 'GPU'; S.mod = mod; S.files = files; S.handLm = await mk(mod.HandLandmarker, HAND_URL, {numHands:2, minHandDetectionConfidence:.5, minHandPresenceConfidence:.5, minTrackingConfidence:.5})(); }
   catch(e){ console.warn('Sin seguimiento de manos', e); S.handLm = null; }
 }
 function enterFsFromGesture(){ if ($('#chkFs').checked || MOBILE) enterFs(); }
@@ -1256,10 +1397,10 @@ function begin(calibrate){
   $('#intro').classList.remove('show');
   S.running = true; S.t0 = performance.now(); S.rows = []; S.items = []; S.recs = []; $('#log').innerHTML = ''; S.menuShown = false;
   S.perclos = []; S.yawns = []; S.base = {}; S.since = {}; S.lastFired = {}; S.lastEvent = '';
-  $('#dot').classList.add('on'); $('#aura').classList.toggle('on', !S.pov);
+  $('#dot').classList.add('on'); $('#aura').classList.remove('on');
   $('#hudStatus').textContent = S.mode==='cam' ? 'Lentes activos' : 'Lentes activos · demo';
   ['btnStop','btnCsv','btnMenu'].forEach(id => $('#'+id).disabled = false); $('#btnRecal').disabled = S.mode!=='cam';
-  S.handsOn = S.pov ? true : $('#optHands').checked; S.lastHands = [];
+  S.handsOn = S.pov ? true : $('#optHands').checked; S.lastHands = []; $('#helpBuddy').classList.add('show'); BUS.send('hello', {mode:S.mode, level:+$('#selLevel').value});
   try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(w => S.wake = w).catch(()=>{}); } catch(_){}
   requestAnimationFrame(loop);
   if (calibrate) startCalib(); else goHome(true);
@@ -1270,7 +1411,7 @@ function stopSession(){
   if (S.stream) S.stream.getTracks().forEach(t=>t.stop());
   S.stream = null; S.mode = null; handStep(null,0); demoAuto = false; setDock('none');
   if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-  $('#dot').classList.remove('on'); $('#aura').classList.remove('on');
+  $('#dot').classList.remove('on'); $('#aura').classList.remove('on'); $('#helpBuddy').classList.remove('show'); BUS.send('bye', {});
   ['btnStop','btnMenu','btnRecal'].forEach(id => $('#'+id).disabled = true);
   $('#intro').classList.add('show'); $('#introMsg').textContent = 'Sesión terminada. Todavía podés exportar los CSV.';
   $('#btnDemo').disabled = false; $('#btnCam').disabled = !$('#consent').checked;
@@ -1294,15 +1435,24 @@ function setView(pov){
 $('#povLink').onclick = () => setView(!S.pov);
 document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => setView(b.dataset.v==='pov'));
 const fdist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
-/* dedos extendidos: [pulgar, índice, medio, anular, meñique] */
+/* dedos extendidos: [pulgar, índice, medio, anular, meñique]. Mide distancias respecto de la muñeca (no depende de la orientación). */
 function fingerFlags(lm){
   const w = lm[0], size = fdist(lm[0], lm[9]) || 1;
-  const f = [[8,6],[12,10],[16,14],[20,18]].map(([t,p]) => fdist(lm[t], w) > fdist(lm[p], w)*1.12);
+  const f = [[8,6,5],[12,10,9],[16,14,13],[20,18,17]].map(([t,pp,m]) => fdist(lm[t], w) > fdist(lm[pp], w)*1.12 && fdist(lm[t], w) > fdist(lm[m], w)*1.25);
   const thumb = fdist(lm[4], lm[17]) > fdist(lm[3], lm[17])*1.05 && fdist(lm[4], lm[5]) > size*.45;
   return [thumb, ...f];
 }
 const countFingers = lm => fingerFlags(lm).filter(Boolean).length;
 const isPointing = lm => { const f = fingerFlags(lm); return f[1] && !f[2] && !f[3] && !f[4]; };
+/* estabiliza el conteo de cada mano: el valor cambia solo si se repite en 4 de los últimos 6 cuadros */
+const FSLOT = [{h:[], v:0}, {h:[], v:0}];
+function stableCount(slot, raw){
+  const S0 = FSLOT[slot]; S0.h.push(raw); if (S0.h.length > 6) S0.h.shift();
+  const c = {}; S0.h.forEach(x => c[x] = (c[x]||0) + 1);
+  const top = Object.entries(c).sort((a,b) => b[1]-a[1])[0];
+  if (top && top[1] >= Math.min(4, S0.h.length)) S0.v = +top[0];
+  return S0.v;
+}
 const BONES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 const povPt = (p, f) => ({x: f.ox + (S.povMirror ? 1-p.x : p.x)*f.dw, y: f.oy + p.y*f.dh});
 function drawHandsPov(f){
@@ -1323,17 +1473,56 @@ function drawPovWorld(){
   }
 }
 function fingerStep(now){
-  const el = $('#fing'), q = MATH.q, can = S.pov && MATH.active && q && !q.done && !MATH.busy && A.screen==='math' && (S.lastHands||[]).length && S.fingN >= 2;
+  const el = $('#fing'), q = MATH.q, lvl0 = MATH.active && MATH.fixed, hint = $('#fingHint');
+  const onMath = MATH.active && q && !q.done && !MATH.busy && A.screen==='math';
+  hint.classList.toggle('show', !!(lvl0 && onMath && !(S.lastHands||[]).length && S.mode==='cam'));
+  const can = onMath && S.handsOn && (S.lastHands||[]).length && S.fingN >= (lvl0 ? 1 : (S.pov ? 2 : 99));
   if (!can){ FING.n = -1; el.classList.remove('show'); return; }
   if (S.fingN !== FING.n){ FING.n = S.fingN; FING.t = now; FING.done = false; }
-  const prog = clamp((now - FING.t)/1400);
+  const prog = clamp((now - FING.t)/(lvl0 ? 1500 : 1400));
   el.classList.add('show'); el.style.setProperty('--p', Math.round(prog*100)); el.querySelector('b').textContent = S.fingN;
-  if (prog >= 1 && !FING.done){ FING.done = true; const b = hud.querySelector(`#mOpts [data-v="${S.fingN}"]`); if (b) b.click(); }
+  el.querySelector('small').textContent = lvl0 ? (prog < 1 ? `¿Es ${S.fingN}? Mantené quietas las manos` : `Elegiste ${S.fingN}`) : '';
+  if (prog >= 1 && !FING.done){
+    FING.done = true; el.classList.add('ok'); setTimeout(() => el.classList.remove('ok'), 700);
+    const b = hud.querySelector(`#mOpts [data-v="${S.fingN}"]`); answerMath(S.fingN, b);
+  }
+}
+
+/* ---------- detección de manos con red de seguridad (algunos celulares aceptan la GPU pero fallan al detectar) ---------- */
+const HDBG = {delegate:'GPU', err:'', fails:0, ms:0};
+function detectHands(now){
+  if (!(S.handLm && S.handsOn) || S.frameN % S.handEvery) return;
+  try {
+    S.hts = Math.max((S.hts||0) + 1, now + .5); const t0 = performance.now();
+    const ho = S.handLm.detectForVideo(video, S.hts); S.lastHands = ho.landmarks || []; HDBG.ms = Math.round(performance.now() - t0); HDBG.fails = 0;
+  } catch(e){
+    HDBG.fails++; HDBG.err = String((e && e.message) || e).slice(0, 70); S.lastHands = [];
+    if (HDBG.fails === 3 && HDBG.delegate !== 'CPU') reloadHandsCpu();
+  }
+}
+async function reloadHandsCpu(){
+  try {
+    HDBG.delegate = 'CPU'; const old = S.handLm; S.handLm = null;
+    S.handLm = await S.mod.HandLandmarker.createFromOptions(S.files, {baseOptions:{modelAssetPath:HAND_URL, delegate:'CPU'}, runningMode:'VIDEO', numHands:2});
+    try { old && old.close(); } catch(_){}
+    HDBG.fails = 0; HDBG.err = 'GPU falló: se pasó a CPU';
+  } catch(e){ HDBG.err = 'sin manos: ' + e.message; }
+}
+const dbgEl = document.createElement('div'); dbgEl.className = 'dbg'; stage.appendChild(dbgEl);
+const DEBUG = /[?&]debug=1/.test(location.search); dbgEl.classList.toggle('on', DEBUG);
+function updateHandDiag(){
+  const t = `manos: ${S.nHands||0} · dedos: ${S.fingN||0} · ${HDBG.delegate} ${HDBG.ms} ms · ${S.fps||0} fps${HDBG.err ? ' · ' + HDBG.err : ''}`;
+  if (DEBUG) dbgEl.textContent = t; const el = $('#handDiag'); if (el) el.textContent = t;
 }
 const FING = {n:-1, t:0, done:false};
+/* se llama en cada cuadro, en ambas vistas: dos manos, hasta diez dedos */
 function povStep(now){
-  const hs = S.handsOn ? (S.lastHands||[]) : [];
-  S.fingN = hs.reduce((a,h) => a + countFingers(h), 0);
+  const raw = S.handsOn && S.mode==='cam' ? (S.lastHands||[]) : [];
+  const hs = raw.slice().sort((a,b) => a[0].x - b[0].x);               /* de izquierda a derecha, para que cada mano conserve su "casillero" */
+  S.fingN = 0; hs.forEach((h,i) => { if (i < 2) S.fingN += stableCount(i, countFingers(h)); });
+  for (let i = hs.length; i < 2; i++){ FSLOT[i].h = []; FSLOT[i].v = 0; }
+  S.fingN = Math.min(10, S.fingN);
+  S.nHands = hs.length;
   handStep(hs.find(isPointing) || hs[0] || null, now);
   fingerStep(now);
 }
@@ -1500,36 +1689,58 @@ function checkRules(now){
 }
 
 /* ================= manos: cursor, pellizco, permanencia ================= */
-const HAND = {vis:false, fx:0, fy:0, hist:[], pinch:false, hover:null, hoverT:0, fired:false, GAIN:1.35};
+const HAND = {vis:false, fx:0, fy:0, hist:[], pinch:false, hover:null, hoverT:0, fired:false, lockUntil:0, pinchT:0, pinchTarget:null, DWELL:MOBILE ? 1.2 : 1.0};
+class OneEuro {
+  constructor(mc=1.2, b=4, dc=1){ this.mc = mc; this.b = b; this.dc = dc; this.x = null; this.dx = 0; this.t = 0; }
+  static al(c, dt){ const tau = 1/(2*Math.PI*c); return 1/(1 + tau/dt); }
+  f(v, t){
+    if (this.x == null){ this.x = v; this.t = t; return v; }
+    const dt = Math.max(.001, (t - this.t)/1000); this.t = t;
+    this.dx += ((v - this.x)/dt - this.dx) * OneEuro.al(this.dc, dt);
+    this.x += (v - this.x) * OneEuro.al(this.mc + this.b*Math.abs(this.dx), dt); return this.x;
+  }
+  reset(){ this.x = null; this.dx = 0; }
+}
+const FX = new OneEuro(), FY = new OneEuro();
+const handLock = (ms=900) => { HAND.lockUntil = performance.now() + ms; };   /* tras un cambio de pantalla o de pregunta no se acepta ningún toque con la mano */
 const handEl = $('#hand');
-const btnAt = (x,y) => { const e = document.elementFromPoint(x,y); const b = e && e.closest('.hud-btn'); return b && !b.disabled ? b : null; };
+const btnAt = (x,y) => { const e = document.elementFromPoint(x,y); const b = e && e.closest('.hud-btn'); if (!b || b.disabled) return null; if (MATH.active && MATH.fixed && b.closest('#mOpts')) return null; return b; };  /* en el nivel 0 las respuestas son con dedos */
 function handStep(lm, now){
   if (!lm || !S.handsOn){
-    handEl.style.display = 'none'; HAND.vis = false; HAND.pinch = false;
+    handEl.style.display = 'none'; HAND.vis = false; HAND.pinch = false; HAND.pinchTarget = null; FX.reset(); FY.reset();
     if (HAND.hover) HAND.hover.classList.remove('hover'); HAND.hover = null; handEl.querySelector('i').style.setProperty('--p',0); return;
   }
-  let tx, ty;
-  if (S.pov){ const f = fitInfo(), q = povPt(lm[8], f); tx = clamp(q.x/cv.width); ty = clamp(q.y/cv.height); }   /* el cursor queda sobre la yema del dedo */
-  else { tx = clamp(((1-lm[8].x)-.5)*HAND.GAIN+.5); ty = clamp((lm[8].y-.5)*HAND.GAIN+.5); }
-  if (!HAND.vis){ HAND.fx = tx; HAND.fy = ty; } else { HAND.fx += (tx-HAND.fx)*.45; HAND.fy += (ty-HAND.fy)*.45; }
-  HAND.vis = true;
+  /* el cursor queda sobre la yema del índice (mismo mapeo en ambas vistas, también en pantallas verticales del celular) y se filtra para evitar temblor */
+  const f = fitInfo(), q = povPt(lm[8], f);
+  const tx = FX.f(clamp(q.x/cv.width), now), ty = FY.f(clamp(q.y/cv.height), now);
+  HAND.fx = tx; HAND.fy = ty; HAND.vis = true;
   const rect = stage.getBoundingClientRect(), k = parseFloat(stage.style.getPropertyValue('--k')) || 1;
   const px = HAND.fx*rect.width, py = HAND.fy*rect.height, cx = rect.left+px, cy = rect.top+py;
   handEl.style.display = 'block'; handEl.style.transform = `translate(${px}px,${py}px) scale(${k})`;
   HAND.hist.push({t:now, cx, cy}); while (HAND.hist.length && now - HAND.hist[0].t > 400) HAND.hist.shift();
+  const h0 = HAND.hist.find(h => h.t >= now-200) || HAND.hist[0], speed = Math.hypot(cx-h0.cx, cy-h0.cy)/Math.max(1, rect.width);   /* fracción del ancho en 200 ms */
+  const still = speed < .05;
   const vw = video.videoWidth || 1280, vh = video.videoHeight || 720;
-  const d = (p,q) => Math.hypot((p.x-q.x)*vw, (p.y-q.y)*vh);
+  const d = (p,q2) => Math.hypot((p.x-q2.x)*vw, (p.y-q2.y)*vh);
   const ratio = d(lm[4],lm[8]) / Math.max(1e-6, d(lm[0],lm[9])), was = HAND.pinch;
   if (!HAND.pinch && ratio < .32) HAND.pinch = true; else if (HAND.pinch && ratio > .48) HAND.pinch = false;
   handEl.classList.toggle('pinch', HAND.pinch);
-  const target = btnAt(cx, cy);
+  const target = btnAt(cx, cy), locked = now < HAND.lockUntil;
   if (target !== HAND.hover){ if (HAND.hover) HAND.hover.classList.remove('hover'); if (target) target.classList.add('hover'); HAND.hover = target; HAND.hoverT = now; HAND.fired = false; }
-  if (HAND.pinch && !was){
-    const old = HAND.hist.find(h => h.t >= now-150) || HAND.hist[0];
-    const t2 = btnAt(old.cx, old.cy) || target; if (t2) t2.click(); HAND.fired = true;
+  const isHelp = t => t && t.dataset.act === 'help';
+  /* pellizco: hay que sostenerlo un instante sobre el mismo botón (110 ms; 350 ms para ayuda) */
+  if (HAND.pinch && !was){ const old = HAND.hist.find(h => h.t >= now-150) || HAND.hist[0]; HAND.pinchTarget = btnAt(old.cx, old.cy) || target; HAND.pinchT = now; }
+  if (!HAND.pinch) HAND.pinchTarget = null;
+  if (HAND.pinch && HAND.pinchTarget && !HAND.fired && !locked && now - HAND.pinchT >= (isHelp(HAND.pinchTarget) ? 350 : 110)){
+    if (HAND.pinchTarget === target || still){ HAND.pinchTarget.click(); HAND.fired = true; handLock(800); }
   }
+  /* permanencia: 1 s (1,2 s en celular; 1,6 s en ayuda) con la mano quieta; si se mueve rápido, se reinicia */
   let prog = 0;
-  if ($('#optDwell').checked && target && !HAND.pinch && !HAND.fired && !(S.pov && S.fingN >= 2)){ prog = (now - HAND.hoverT)/1000; if (prog >= 1){ target.click(); HAND.fired = true; prog = 0; } }
+  if ($('#optDwell').checked && target && !HAND.pinch && !HAND.fired && !locked && !(S.fingN >= 2 && A.screen==='math' && MATH.active && S.pov)){
+    if (!still) HAND.hoverT = now;
+    const need = HAND.DWELL * (isHelp(target) ? 1.6 : 1);
+    prog = (now - HAND.hoverT)/(need*1000); if (prog >= 1){ target.click(); HAND.fired = true; prog = 0; handLock(800); }
+  }
   handEl.querySelector('i').style.setProperty('--p', Math.round(clamp(prog)*100));
 }
 
@@ -1582,6 +1793,7 @@ function drawFrame(haveFace){
     ctx.fillStyle = 'rgba(2,14,28,.22)'; ctx.fillRect(0,0,w,h);
   } else drawDemoFace();
   ctx.drawImage(vig, 0, 0, w, h);
+  if (S.handsOn && MATH.active && MATH.fixed && S.mode==='cam') drawHandsPov(fitInfo());   /* confirmación visual de las dos manos en el nivel 0 */
 }
 
 /* ================= panel ================= */
@@ -1680,32 +1892,28 @@ function loop(now){
   if (now - S.fpsT > 1000){ S.fps = Math.round(S.frames*1000/(now-S.fpsT)); S.frames = 0; S.fpsT = now; S.handEvery = S.fps < 20 ? 2 : 1; }
 
   if (S.pov){
-    if (S.mode === 'cam' && video.readyState >= 2 && video.currentTime !== S.lastVT){
-      S.lastVT = video.currentTime;
-      if (S.handLm && S.handsOn && S.frameN % S.handEvery === 0){ const ho = S.handLm.detectForVideo(video, now + .5); S.lastHands = ho.landmarks || []; }
+    if (S.mode === 'cam' && video.readyState >= 2 && (video.currentTime !== S.lastVT || now - (S.lastDetT||0) > 80)){
+      S.lastVT = video.currentTime; S.lastDetT = now; detectHands(now);
     }
     drawFrame(false); povStep(now); rdTick(now); mathTick(now);
-    if (now - S.lastUI > 150){ S.lastUI = now; updateUI(now); }
+    if (now - S.lastUI > 150){ S.lastUI = now; updateUI(now); updateHandDiag(); }
     return;
   }
   let res = null, haveFace = false;
   if (S.mode === 'cam'){
     if (video.readyState >= 2 && video.currentTime !== S.lastVT){
-      S.lastVT = video.currentTime;
+      S.lastVT = video.currentTime; S.lastDetT = now;
       const out = S.landmarker.detectForVideo(video, now);
       if (out.faceLandmarks && out.faceLandmarks.length){
         const lm = out.faceLandmarks[0], bs = {};
         (out.faceBlendshapes[0]?.categories || []).forEach(c => bs[c.categoryName] = c.score);
         res = {bs, pose: poseFromLm(lm)}; haveFace = true; S.noFaceSince = null; S.lastRes = res;
       } else if (S.noFaceSince == null) S.noFaceSince = now;
-      if (S.handLm && S.handsOn && S.frameN % S.handEvery === 0){
-        const ho = S.handLm.detectForVideo(video, now + .5); S.lastHand = ho.landmarks && ho.landmarks.length ? ho.landmarks[0] : null;
-      }
-      if (S.handLm && S.handsOn) handStep(S.lastHand, now);
+      detectHands(now);
     } else if (S.lastRes && S.noFaceSince == null){ res = S.lastRes; haveFace = true; }
   } else { res = demoStep(now, dt); haveFace = true; }
 
-  drawFrame(haveFace);
+  drawFrame(haveFace); povStep(now);
 
   if (haveFace){
     const f = features(res.bs, res.pose);
@@ -1728,7 +1936,7 @@ function loop(now){
       }
     }
   } else { rdTick(now); mathTick(now); }
-  if (now - S.lastUI > 150){ S.lastUI = now; updateUI(now); }
+  if (now - S.lastUI > 150){ S.lastUI = now; updateUI(now); updateHandDiag(); }
 }
 
 /* ================= exportar CSV ================= */
@@ -1756,6 +1964,8 @@ window.__lumen = { S, RD, MATH, A, MIC, HAND, syllabify, parseNums, handStep, sa
     lm[0] = {x, y:y+.2}; lm[9] = {x, y:y+.05}; lm[8] = {x, y}; lm[4] = {x:x+(pinch?.01:.1), y};
     handStep(lm, performance.now());
   } };
+
+if (/[?&]test=1/.test(location.search)) window.__LA = {S, MATH, A, BUS, HAND, FSLOT, genQ, countFingers, fingerFlags, answerMath, stableCount, handStep, povStep, handLock};
 </script>
 </body>
 </html>

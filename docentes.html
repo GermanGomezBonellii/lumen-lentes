@@ -144,6 +144,15 @@ button{font:inherit;color:var(--txt);cursor:pointer;transition:.15s}
 @keyframes ring{to{stroke-dashoffset:-24}}
 @keyframes blink{50%{opacity:.35}}
 .chip-t{font-family:var(--f);font-size:12px;font-weight:700;letter-spacing:.12em;pointer-events:none}
+/* vista simple: un polígono de color sobre la cabeza */
+#scene.simple .dt{display:none!important}
+.ov .tone{stroke:rgba(8,6,14,.78);stroke-width:2px;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55));transition:transform .15s}
+.ov .tone-t{font-family:var(--f);font-size:15px;font-weight:800;text-anchor:middle;pointer-events:none;fill:#0b0a12}
+.ov .tone-n{font-family:var(--f);font-size:12px;font-weight:700;text-anchor:middle;pointer-events:none;fill:#f4eee4;paint-order:stroke;stroke:rgba(8,6,14,.85);stroke-width:3px;opacity:0;transition:opacity .15s}
+.ov:hover .tone-n,.ov.sel .tone-n,.ov:focus-visible .tone-n{opacity:1}
+.ov:hover .tone,.ov.sel .tone{stroke:#fff;stroke-width:3px}
+.ov.alarm .tone{animation:blink 1s steps(2,end) infinite}
+#scene:not(.simple) .tone-g{display:none}
 .chip-m{font-family:var(--f);font-size:11px;font-weight:600;letter-spacing:.1em;pointer-events:none}
 .breath{animation:breath 4.2s ease-in-out infinite}
 @keyframes breath{50%{transform:translateY(-2.2px)}}
@@ -215,6 +224,50 @@ aside.side{display:flex;flex-direction:column;gap:14px}
 .copy{margin-top:8px;font-size:12px}
 .note{font-size:12px;color:var(--mut)}
 details.card summary{cursor:pointer;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);font-weight:600}
+/* ===== v6: capas de información, escenarios, clase ===== */
+.badge{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;vertical-align:middle}
+.badge.sim{color:#ffb347}.badge.real{color:#6df7d0}
+.layer-tag{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut)}
+.roster-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tile{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:10px 12px;color:inherit;font:inherit;cursor:pointer}
+.tile:hover,.tile:focus-visible{border-color:var(--lux)}
+.tile .nm{display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:600}
+.tile .lv{font-size:11px;letter-spacing:.1em;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.1)}
+.tile .st{display:flex;align-items:center;gap:6px;font-size:12px}
+.tile .st i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:700;color:#0b0b10}
+.tile.ok .st i{background:#6df7d0}.tile.watch .st i{background:#ffb347}.tile.help .st i{background:#ff7aa8}.tile.alert .st i{background:#FF5A4F;color:#fff}
+.tile.help,.tile.alert{border-color:#FF5A4F}
+.tile.help{animation:pulse2 1.6s ease-in-out infinite}
+.dots{display:flex;gap:3px}.dots b{width:9px;height:9px;border-radius:50%;background:#6df7d0}.dots b.x{background:#ff5a7a}
+.tabs{display:flex;gap:4px;margin:0 0 10px;padding:3px;background:rgba(255,255,255,.06);border-radius:999px}
+.tabs button{flex:1;border:0;background:transparent;color:inherit;font:inherit;font-size:12px;padding:6px 4px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected=true]{background:linear-gradient(135deg,#ffe9b0,#ffb36b);color:#2a1604;font-weight:700}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px}.kv span{color:var(--mut)}
+.hist{display:flex;flex-direction:column;gap:3px;font-size:12px;max-height:150px;overflow:auto}
+.hist div{display:flex;justify-content:space-between;gap:8px}
+.lvlctl{display:flex;gap:6px;align-items:center;margin:6px 0}
+.lvlctl button{flex:1;border-radius:12px;padding:8px;border:1px solid var(--line);background:var(--panel2);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.lvlctl button:hover:not([disabled]){border-color:var(--lux)}.lvlctl button[disabled]{opacity:.35;cursor:not-allowed}
+.lvlctl b{min-width:34px;text-align:center;font-size:20px}
+.rec{border-left:3px solid #ffb347;background:rgba(255,179,71,.08);padding:8px 10px;border-radius:0 10px 10px 0;font-size:13px;margin:6px 0}
+.rec.up{border-color:#6df7d0;background:rgba(109,247,208,.08)}
+.dist{display:flex;gap:6px;align-items:flex-end;height:70px;margin:6px 0}
+.dist div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px;font-size:11px;color:var(--mut)}
+.dist i{display:block;width:100%;border-radius:6px 6px 0 0;background:linear-gradient(#ffe9b0,#ffb36b);min-height:2px}
+.chipq{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:var(--panel2);color:inherit;border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;cursor:pointer;margin:0 6px 6px 0}
+.chipq:hover:not([disabled]){border-color:var(--lux)}.chipq[disabled]{opacity:.4;cursor:default}
+.chipq b{color:var(--lux)}
+.scn-btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.scn-btns button{text-align:left;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.scn-btns button:hover:not([disabled]){border-color:var(--lux)}.scn-btns button[aria-pressed=true]{border-color:var(--lux);background:rgba(255,217,138,.12)}.scn-btns button[disabled]{opacity:.4;cursor:not-allowed}
+.scn-info{margin-top:10px;font-size:13px}.scn-info h3{margin:0 0 4px;font-size:14px}
+.scn-steps{list-style:none;margin:8px 0;padding:0;font-size:12px}.scn-steps li{display:flex;gap:6px;padding:2px 0;color:var(--mut)}.scn-steps li.done{color:var(--txt)}.scn-steps li.done::before{content:"✓";color:#6df7d0}.scn-steps li:not(.done)::before{content:"○"}
+.scn-res{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:8px}.scn-res.ok{border-color:#6df7d0}
+.scn-ctl{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.confirm{border:1px solid var(--lux);border-radius:12px;padding:10px;margin-top:10px;font-size:13px}
+.names button.me{outline:1px solid var(--lux)}
+
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
 </style>
@@ -259,9 +312,9 @@ details.card summary{cursor:pointer;font-size:11px;letter-spacing:.22em;text-tra
             </div>
             <ol class="alert-steps" id="alertSteps" hidden></ol>
             <div class="alert-actions">
-              <button class="btn-lens" id="btnSteps">Ver protocolo</button>
-              <button class="btn-lens primary" id="btnAck">Enterado</button>
-              <button class="btn-lens" id="btnFalse">Falso positivo</button>
+              <button class="btn-lens" id="btnSteps">Consultar</button>
+              <button class="btn-lens primary" id="btnAck">Gestionar</button>
+              <button class="btn-lens" id="btnFalse">Falsa alarma</button>
             </div>
           </div>
 
@@ -283,14 +336,39 @@ details.card summary{cursor:pointer;font-size:11px;letter-spacing:.22em;text-tra
           <div class="hud hud-bottom">
             <div class="orb"><i></i></div>
             <div class="climate"><span>CLIMA</span><span class="segs" id="segs"></span></div>
-            <div class="hint"><b>Doble click</b> en un recuadro para ver sugerencias</div>
+            <div class="hint"><b>Tocá</b> el polígono de una persona para ver su ficha</div>
             <div>estimación, no diagnóstico</div>
           </div>
         </div>
       </div>
+      <section class="card" id="roster" style="margin-top:14px" aria-label="Vista general de la clase">
+        <div class="roster-head">
+          <div><span class="layer-tag">Capa 1 · Vista general</span><h2 style="margin:2px 0 0">Alumnos</h2></div>
+          <div class="seg-btns" id="srcSeg" role="group" aria-label="Origen de los datos"><button class="pill" data-s="sim" aria-pressed="true">Simulados</button><button class="pill" data-s="real" aria-pressed="false">Reales</button></div>
+        </div>
+        <div class="tiles" id="tiles"></div>
+        <p class="note" id="rosterNote" style="margin-top:8px"></p>
+      </section>
     </main>
 
     <aside class="side">
+      <section class="card" id="classCard">
+        <h2>Resumen de la clase <span class="badge sim" id="classBadge">simulado</span></h2>
+        <div class="kv"><span>Alumnos</span><b id="clN">0</b><span>Precisión (últimas 8 cuentas)</span><b id="clAcc">—</b><span>Cuentas resueltas hoy</span><b id="clItems">0</b></div>
+        <div class="sub-h" style="margin-top:10px">Distribución de niveles</div>
+        <div class="dist" id="clDist"></div>
+        <div class="sub-h">Podrían necesitar asistencia</div>
+        <div id="clNeed" class="names"></div>
+        <div class="sub-h" style="margin-top:8px">Consultar grupos</div>
+        <div id="clQ"></div>
+      </section>
+
+      <section class="card" id="scnCard">
+        <h2>Escenarios de prueba <span class="badge sim">simulados</span></h2>
+        <div class="scn-btns" id="scnBtns"></div>
+        <div class="scn-info" id="scnInfo"><p class="note">Elegí un escenario. Todos empiezan igual y se pueden repetir. Sirven para ensayar el test de usabilidad.</p></div>
+      </section>
+
       <section class="card">
         <h2>Estado de la clase en tiempo real</h2>
         <div class="bigmood"><b id="classMood">NEUTRAL</b><span>ánimo predominante</span></div>
@@ -309,6 +387,7 @@ details.card summary{cursor:pointer;font-size:11px;letter-spacing:.22em;text-tra
         </div>
         <label class="check"><input type="checkbox" id="consent"><span>Entiendo que el video se procesa en este dispositivo y no se guarda ni se envía. Las personas filmadas están informadas.</span></label>
         <label class="check"><input type="checkbox" id="mirror" checked><span>Imagen en espejo</span></label>
+        <label class="check"><input type="checkbox" id="detail"><span>Vista detallada (recuadros, barras y etiquetas)</span></label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn primary" id="btnStartCam" disabled>Activar cámara</button>
           <button class="btn" id="btnRecal" disabled>Recalibrar</button>
@@ -324,11 +403,12 @@ details.card summary{cursor:pointer;font-size:11px;letter-spacing:.22em;text-tra
       <section class="card">
         <h2>Probar alertas <span class="note">(simuladas)</span></h2>
         <div class="alert-btns" id="alertBtns"></div>
-        <p class="note" style="margin-top:8px">Desmayo y angustia sostenida también se detectan solas desde el rostro: cabeza caída con ojos cerrados 5 s, o tristeza sostenida 6 s.</p>
+        <p class="note" style="margin-top:8px">Estos botones simulan alertas para ensayar. Con cámara solo se detectan de verdad dos indicios: cabeza baja con ojos cerrados 5 s («posible desmayo») y tristeza sostenida 6 s («posible malestar»). Ambos son orientativos y hay que verificarlos. El movimiento inusual, el forcejeo, el humo y la persona sin registro <b>no se detectan con cámara</b>: solo existen como simulación. Las solicitudes de ayuda son reales cuando llegan desde Lumen alumnos.</p>
       </section>
 
       <section class="card">
         <h2>Estados y ánimo en el aula</h2>
+        <p class="note" style="margin:0 0 8px">Sobre cada cabeza hay un polígono. Su color <b>mezcla</b> los tonos de abajo según cuánto pesa cada señal: verde = sin indicios, y se va corriendo hacia violeta, naranja o rojo de a poco. Gris con línea punteada = sin datos. Es orientativo: tocá a la persona para ver más.</p>
         <div class="sub-h">Estado</div>
         <ul class="legend2" id="legState"></ul>
         <div class="sub-h">Ánimo</div>
@@ -341,6 +421,15 @@ details.card summary{cursor:pointer;font-size:11px;letter-spacing:.22em;text-tra
         <button class="copy" id="copyLog">Copiar registro</button>
         <span class="note" id="copyMsg" role="status"></span>
       </section>
+
+      <details class="card">
+        <summary>Qué es real y qué es simulado</summary>
+        <ul class="note" style="margin:8px 0 0;padding-left:18px">
+          <li><b>Real:</b> rostros de la cámara (estimación orientativa), cuerpos detectados, alumnos de Lumen alumnos abiertos en este mismo navegador (progreso, nivel, ayuda) y las dos detecciones de la cámara indicadas arriba.</li>
+          <li><b>Simulado:</b> alumnos de la demo, su progreso, los seis escenarios y las alertas de prueba. Siempre llevan la etiqueta «simulado».</li>
+          <li><b>Límite:</b> el canal con Lumen alumnos funciona entre pestañas del mismo navegador y sitio. Entre dispositivos distintos haría falta un servidor, que este prototipo no tiene.</li>
+        </ul>
+      </details>
 
       <details class="card">
         <summary>Cómo se calcula</summary>
@@ -369,6 +458,21 @@ const MET=[['att','ATN','#6df7d0','Atención'],['fat','FAT','#ffb347','Fatiga'],
 const ALARM='#FF5A4F';
 
 function stateWord(m){return m.fru>.5?'Frustrado':m.con>.5?'Confundido':m.fat>.5?'Fatigado':m.att<.45?'Distraído':m.att>.75?'Concentrado':'Atento';}
+/* Tono continuo: mezcla los colores de cada estado según cuánto pesa cada señal; se suaviza en el tiempo, así nunca salta de un color a otro */
+const TONE_A={ok:[109,247,208],fru:[255,90,122],con:[167,139,255],fat:[255,179,71],dis:[127,143,179]};
+function toneTarget(T){
+  const m=T.m,w={fru:clamp(m.fru),con:clamp(m.con),fat:clamp(m.fat),dis:clamp((.65-m.att)/.65)};
+  const sum=w.fru+w.con+w.fat+w.dis,ok=Math.max(.12,1-sum*1.4);
+  const tot=sum+ok,c=[0,0,0];
+  [['ok',ok],['fru',w.fru],['con',w.con],['fat',w.fat],['dis',w.dis]].forEach(([k,v])=>{for(let i=0;i<3;i++)c[i]+=TONE_A[k][i]*v/tot;});
+  return c;
+}
+function toneOf(T){
+  const tg=T.calib||T.body?[150,143,166]:toneTarget(T);
+  if(!T.tc)T.tc=tg.slice();else for(let i=0;i<3;i++)T.tc[i]+=(tg[i]-T.tc[i])*.05;
+  return T.tc;
+}
+const rgb=c=>`rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
 function auraColor(T){const sw=T.state;if((sw==='Concentrado'||sw==='Atento')&&T.mood==='Contento')return '#ffd98a';return STATE_COL[sw]||'#6df7d0';}
 function neutralPct(T){const e=T.emoS;const mx=Math.max(e.Contento,e.Tristeza,e.Enojo,e.Sorpresa);return 1-clamp(mx*1.6);}
 
@@ -479,7 +583,19 @@ const ALERTS={
   angustia:{short:'Angustia',title:'Angustia sostenida en un alumno',sev:'Media',rank:2,n:1,demo:[9],face:'ansioso',signal:'Tristeza sostenida durante 6 s.',
     steps:['Hablale en privado y sin presión.','Ofrecele acompañarlo al equipo de orientación.','Evitá preguntarle frente al grupo.','Dejá constancia para el seguimiento.']}
 };
-const ALERT_ORDER=['desmayo','asfixia','humo','pelea','intruso','angustia'];
+const ALERT_ORDER=['ayuda','movimiento','angustia','desmayo','asfixia','pelea','humo','intruso'];
+/* v6: alertas de ayuda y de movimiento; textos prudentes (nada se afirma solo por un gesto o una expresión) */
+Object.assign(ALERTS,{
+  ayuda:{short:'Ayuda',title:'Solicitud de ayuda',sev:'Media',rank:1,n:1,demo:[3],face:'atento',signal:'El alumno tocó el botón de ayuda.',
+    steps:['Acercate o hacele una seña para que sepa que lo viste.','Preguntale en qué parte se trabó.','Si hace falta, ajustá el nivel desde su ficha (Capa 3).','Resolvé la solicitud cuando termines.']},
+  movimiento:{short:'Movimiento',title:'Movimiento inusual (a verificar)',sev:'Baja',rank:3,n:1,demo:[2],face:'atento',
+    steps:['Mirá la situación antes de actuar: un movimiento brusco puede ser normal.','Si no pasa nada, marcá «Falsa alarma»: ayuda a ajustar el sistema.','Si dudás, acercate y preguntale cómo está.']}
+});
+ALERTS.angustia.title='Posibles señales de malestar';ALERTS.angustia.short='Posible malestar';ALERTS.angustia.signal='Tristeza sostenida durante 6 s (indicio orientativo, no es un diagnóstico).';
+ALERTS.angustia.steps=['Observá con calma antes de intervenir.','Si decidís intervenir, hablale en privado y sin presión.','Ofrecele acompañarlo al equipo de orientación si lo ves necesario.','Dejá constancia para el seguimiento.'];
+ALERTS.desmayo.title='Posible desmayo o caída (a verificar)';ALERTS.asfixia.title='Posible atragantamiento o reacción alérgica (a verificar)';ALERTS.pelea.title='Posible forcejeo entre alumnos (a verificar)';
+ALERTS.humo.title='Posible humo en el aula (simulado)';ALERTS.intruso.title='Persona sin registro en la puerta (simulado)';
+
 
 /* ================= escena demo ================= */
 const scene=$('#scene'),demoLayer=$('#demoLayer'),ovLayer=$('#ovLayer'),stage=$('#stage');
@@ -614,8 +730,50 @@ const CONTEXTS={
 };
 
 /* ================= estado global ================= */
-const S={sound:true,mode:'demo',tracks:[],seq:0,stream:null,landmarker:null,lastVT:-1,fps:0,frames:0,fpsT:0,ctx:'explicacion',t0:performance.now()};
+const S={detail:false,sound:true,mode:'demo',tracks:[],seq:0,stream:null,landmarker:null,lastVT:-1,fps:0,frames:0,fpsT:0,ctx:'explicacion',t0:performance.now()};
 let active=[],alertSeq=0,viewIdx=0,sel=null,sheetMode=null,logLines=[];
+/* ================= v6 · modelo de progreso (simulado vs real) ================= */
+const REAL=new Map();            // alumnos reales conectados por el canal alumno↔docente (sid → entidad)
+const ALERT_HIST=[];            // historial de alertas gestionadas
+const LEVEL_NAME=['Nivel 0 · dedos 1–10','Nivel 1 · sumas y restas simples','Nivel 2 · cuentas con decenas','Nivel 3 · multiplicaciones'];
+const QBANK={0:['3 + 2','7 − 4','5 + 4','9 − 6','4 + 4','8 − 3'],1:['6 + 8','12 − 5','7 + 9','14 − 6','9 + 5','11 − 4'],2:['27 + 15','43 − 18','36 + 29','52 − 27','48 + 19','61 − 34'],3:['3 × 4','5 × 6','2 × 9','4 × 7','10 × 3','6 × 6']};
+const DEMO_PROG=[ // nivel inicial y patrón de las últimas 8 cuentas (o = correcta, x = error), idéntico en cada reinicio
+  {l:1,h:'ooxoooxo',ms:5200},{l:2,h:'oooxooxo',ms:6100},{l:1,h:'oooooxoo',ms:4300},{l:2,h:'ooxooooo',ms:5600},{l:2,h:'oxooxooo',ms:7000},
+  {l:0,h:'ooooxooo',ms:6400},{l:3,h:'oooxoooo',ms:7200},{l:1,h:'ooooooox',ms:4800},{l:2,h:'oooxooox',ms:6800},{l:1,h:'oxooooxo',ms:5500}];
+function initProg(T){
+  const d=DEMO_PROG[T.id%DEMO_PROG.length],bank=QBANK[d.l];
+  T.src='sim';T.prog={level:d.l,startLevel:d.l,help:false,helpCount:0,decisions:[],hist:[...d.h].map((c,i)=>({q:bank[(i+T.id)%bank.length],ok:c==='o',ms:d.ms+((i*517+T.id*131)%1800),act:'Matemática'}))};
+}
+function recommend(E){
+  const P=E.prog;if(!P)return {dir:0,why:[],to:null};
+  const h=P.hist.slice(-5),err=h.filter(x=>!x.ok).length,fast=h.length>=5&&h.every(x=>x.ok&&x.ms<6500),why=[];let dir=0;
+  if(err>=3&&P.level>0){dir=-1;why.push(`${err} errores en las últimas ${h.length} cuentas`);if(P.helpCount)why.push('pidió ayuda en esta sesión');if(E.state==='Frustrado'||E.state==='Confundido')why.push(`indicio orientativo de ${E.state.toLowerCase()}`);}
+  else if(fast&&P.level<3){dir=1;why.push('5 cuentas seguidas correctas y rápidas');}
+  return {dir,why,to:dir?P.level+dir:null};
+}
+function statusOf(E){
+  if(!E.prog){if(E.alert)return {k:'alert',txt:'Alerta',ico:'!'};if(!E.calib&&!E.body&&['Frustrado','Confundido','Fatigado'].includes(E.state))return {k:'watch',txt:'Mirar (indicio orientativo)',ico:'◐'};return {k:'ok',txt:E.body?'Solo se ve el cuerpo':E.calib?'Calibrando':'Sin indicios',ico:E.body||E.calib?'·':'✓'};}
+  if(E.prog&&E.prog.help)return {k:'help',txt:'Pidió ayuda',ico:'✋'};
+  if(E.alert)return {k:'alert',txt:'Alerta',ico:'!'};
+  const r=recommend(E);if(r.dir)return {k:'watch',txt:r.dir<0?'Mirar: puede necesitar bajar':'Mirar: puede subir',ico:'◐'};
+  return {k:'ok',txt:'Va bien',ico:'✓'};
+}
+const accOf=E=>{const h=E.prog.hist.slice(-8);return h.length?h.filter(x=>x.ok).length/h.length:0;};
+function addItem(E,ok,ms,q){E.prog.hist.push({q:q||QBANK[E.prog.level][E.prog.hist.length%6],ok:ok,ms:ms,act:'Matemática'});if(E.prog.hist.length>40)E.prog.hist.shift();}
+function toStudent(msg){ // docente → alumno (solo alumnos reales)
+  const m={v:1,from:'teacher',ts:Date.now(),...msg};
+  try{const ch=new BroadcastChannel('lumen-bus');ch.postMessage(m);ch.close();}catch(e){}
+  try{localStorage.setItem('lumen:to-student',JSON.stringify(m));}catch(e){}
+}
+function setLevel(E,to,why){
+  const P=E.prog;to=clamp(to,0,3)|0;if(to===P.level)return;
+  P.decisions.push({t:Date.now(),from:P.level,to:to,why:why||'decisión del docente'});
+  log(`Nivel de ${E.name}: ${P.level} → ${to} (${why||'decisión del docente'})${E.src==='real'?'':' · simulado'}`);
+  P.level=to;
+  if(E.src==='real')toStudent({type:'setLevel',sid:E.sid,level:to});
+  if(window.scnNotify)scnNotify('level',E);
+}
+
 
 function newTrack(name){
   return {id:S.seq++,name:name,base:{},calib:null,m:{att:1,fat:0,fru:0,con:0},emoS:{Contento:0,Tristeza:0,Enojo:0,Sorpresa:0},mood:'Neutral',
@@ -707,7 +865,7 @@ function buildDemoStudents(){
       T.fig.handL=el('circle',{r:10,fill:skin},L.front);T.fig.handR=el('circle',{r:10,fill:skin},L.front);
     }
     T.fig.hl={x:-30,y:90};T.fig.hr={x:30,y:90};
-    S.tracks.push(T);
+    S.tracks.push(T);initProg(T);
     animDemo(T,performance.now());
   });
 }
@@ -759,7 +917,7 @@ function demoStep(T,now,dt){
   ['yaw','pitch','roll'].forEach(n=>c.pose[n]+=(P.pose[n]-c.pose[n])*k);
   const tt=now/1000+T.id*1.7;let blink=0;
   if(P.blink>.4)blink=clamp(.5+.45*Math.sin(tt*1.6));
-  else{T.blinkT-=dt;if(T.blinkT<-.15)T.blinkT=3+Math.random()*2;blink=T.blinkT<0?1:0;}
+  else{T.blinkT-=dt;if(T.blinkT<-.15){T.blinkN=(T.blinkN||0)+1;T.blinkT=3+((T.blinkN*7+T.id*3)%5)*.4;}blink=T.blinkT<0?1:0;}
   c.bs.eyeBlinkLeft=c.bs.eyeBlinkRight=blink;
   c.bs.jawOpen=Math.max(c.bs.jawOpen||0,P.yawn&&(tt%7)<1.2?.75:0);
   const wob=Math.sin(tt*1.3)*.015;
@@ -781,28 +939,29 @@ function createOv(T){
   const o={g:g};
   o.hit=el('rect',{class:'hit'},g);
   o.ring=el('rect',{class:'ring',rx:6},g);
-  o.brk=el('path',{class:'brk'},g);
+  o.brk=el('path',{class:'brk dt'},g);
   o.barsBg=[];o.bars=[];
-  MET.forEach((m,i)=>{o.barsBg.push(el('rect',{rx:1.5,fill:'rgba(255,255,255,.2)'},g));o.bars.push(el('rect',{rx:1.5,fill:m[2]},g));});
-  o.c1=el('rect',{rx:11,'stroke-width':1},g);o.t1=el('text',{class:'chip-t'},g);
-  o.c2=el('rect',{rx:11,fill:'rgba(8,6,14,.72)',stroke:'rgba(255,255,255,.2)','stroke-width':1},g);o.d2=el('circle',{r:4},g);o.t2=el('text',{class:'chip-m',fill:'#f4eee4'},g);
+  MET.forEach((m,i)=>{o.barsBg.push(el('rect',{class:'dt',rx:1.5,fill:'rgba(255,255,255,.2)'},g));o.bars.push(el('rect',{class:'dt',rx:1.5,fill:m[2]},g));});
+  o.c1=el('rect',{class:'dt',rx:11,'stroke-width':1},g);o.t1=el('text',{class:'chip-t dt'},g);
+  o.c2=el('rect',{class:'dt',rx:11,fill:'rgba(8,6,14,.72)',stroke:'rgba(255,255,255,.2)','stroke-width':1},g);o.d2=el('circle',{class:'dt',r:4},g);o.t2=el('text',{class:'chip-m dt',fill:'#f4eee4'},g);
+  const tg=el('g',{class:'tone-g'},g);o.poly=el('polygon',{class:'tone'},tg);o.pt=el('text',{class:'tone-t'},tg);o.nm=el('text',{class:'tone-n'},tg);
   o.last='';
   let lastTap=0;
-  g.addEventListener('click',()=>{sel=T.id;markSel();});
-  g.addEventListener('dblclick',e=>{e.preventDefault();openStudent(T.id);});
-  g.addEventListener('pointerup',e=>{if(e.pointerType==='touch'||e.pointerType==='pen'){const n=Date.now();if(n-lastTap<380){openStudent(T.id);lastTap=0;}else lastTap=n;}});
+  g.addEventListener('click',()=>{sel=T.id;markSel();openStudent(T.id);});
   g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openStudent(T.id);}});
   T.ov=o;
 }
 function markSel(){S.tracks.forEach(t=>t.ov&&t.ov.g.classList.toggle('sel',t.id===sel));}
 function whereOf(T){
+  if(T.src==='real')return 'Alumno conectado';
   if(T.demo)return T.label;
   const c=(T.box.x+T.box.w/2)/1200;return c<.33?'Zona izquierda':c<.66?'Zona central':'Zona derecha';
 }
 function renderOv(T){
   if(!T.ov)createOv(T);
   const o=T.ov,b=T.box,a=T.alert?ALERTS[T.alert]:null;
-  const key=[Math.round(b.x),Math.round(b.y),Math.round(b.w),Math.round(b.h),T.state,T.mood,T.calib?1:0,T.body?1:0,a?T.alert:'',pct(T.m.att),pct(T.m.fat),pct(T.m.fru),pct(T.m.con)].join('|');
+  const tc=toneOf(T),tcol=rgb(tc);
+  const key=[tcol,S.detail?1:0,Math.round(b.x),Math.round(b.y),Math.round(b.w),Math.round(b.h),T.state,T.mood,T.calib?1:0,T.body?1:0,a?T.alert:'',pct(T.m.att),pct(T.m.fat),pct(T.m.fru),pct(T.m.con)].join('|');
   if(key===o.last)return;o.last=key;
   const pad=8,l=Math.max(12,Math.min(26,b.w*.22));
   o.hit.setAttribute('x',b.x-pad);o.hit.setAttribute('y',b.y-pad);o.hit.setAttribute('width',b.w+pad*2+14);o.hit.setAttribute('height',b.h+pad*2);
@@ -812,7 +971,7 @@ function renderOv(T){
   const col=a?ALARM:T.calib?'#968fa6':auraColor(T);
   o.brk.setAttribute('stroke',col);
   o.g.classList.toggle('alarm',!!a);
-  o.g.setAttribute('aria-label',`${T.name}, ${whereOf(T)}. Doble click o Enter para ver sugerencias`);
+  o.g.setAttribute('aria-label',`${T.name}, ${whereOf(T)}. Click o Enter para ver sugerencias`);
   MET.forEach((m,i)=>{
     const x=b.x+b.w+7+i*6,v=T.calib?0:clamp(T.m[m[0]]);
     o.barsBg[i].setAttribute('x',x);o.barsBg[i].setAttribute('y',b.y);o.barsBg[i].setAttribute('width',4);o.barsBg[i].setAttribute('height',b.h);
@@ -822,6 +981,14 @@ function renderOv(T){
   const cy=Math.max(6,b.y-26);
   o.c1.setAttribute('x',b.x);o.c1.setAttribute('y',cy);o.c1.setAttribute('width',chipW(txt));o.c1.setAttribute('height',22);o.c1.setAttribute('fill',a?ALARM:'rgba(8,6,14,.72)');o.c1.setAttribute('stroke',col);
   o.t1.setAttribute('x',b.x+11);o.t1.setAttribute('y',cy+15);o.t1.setAttribute('fill',a?'#fff':col);o.t1.textContent=txt;
+  { // polígono sobre la cabeza (vista simple)
+    const cx=b.x+b.w/2,hw=clamp(b.w*.3,15,28),hh=hw*1.15,tip=Math.max(hh+4,b.y-8),top=tip-hh*1.3;
+    o.poly.setAttribute('points',`${cx-hw},${top} ${cx+hw},${top} ${cx+hw},${top+hh*.62} ${cx},${tip} ${cx-hw},${top+hh*.62}`);
+    o.poly.setAttribute('fill',a?ALARM:tcol);
+    o.poly.setAttribute('stroke-dasharray',T.calib||T.body?'4 3':'');
+    o.pt.setAttribute('x',cx);o.pt.setAttribute('y',top+hh*.52);o.pt.textContent=a?'!':T.calib?'…':T.body?'?':'';
+    o.nm.setAttribute('x',cx);o.nm.setAttribute('y',top-6);o.nm.textContent=T.name;
+  }
   const show=!a&&!T.calib&&T.mood!=='Neutral';
   const mt=MOOD_ADJ[T.mood].toUpperCase();
   const x2=b.x+chipW(txt)+4;
@@ -873,8 +1040,8 @@ nudge.addEventListener('click',()=>{if(nudge.dataset.key)openGroup(nudge.dataset
 /* ================= panel de sugerencias ================= */
 const sheet=$('#sheet'),shBody=$('#shBody'),shFoot=$('#shFoot');
 const secs=since=>{const n=Math.max(0,Math.round((performance.now()-since)/1000));return n<60?`${n} s`:`${Math.floor(n/60)} min ${n%60} s`;};
-const byId=id=>S.tracks.find(t=>t.id===id);
-function openStudent(id){const T=byId(id);if(!T)return;sel=id;markSel();sheetMode={type:'student',id:id,state:T.state};log(`Sugerencias abiertas · ${T.name} (${T.alert?'alerta':T.state+', '+MOOD_ADJ[T.mood]})`);renderSheet(false);}
+const byId=id=>typeof id==='string'?REAL.get(id.slice(2)):S.tracks.find(t=>t.id===id);
+function openStudent(id){const T=byId(id);if(!T)return;sel=id;markSel();sheetMode={type:'student',id:id,state:T.state,tab:'sug',layer:2};log(`Ficha abierta · ${T.name} (${T.alert?'alerta':T.state?T.state+', '+MOOD_ADJ[T.mood]:'sin estimación facial'})`);renderSheet(false);}
 function openGroup(key){sheetMode={type:'group',key:key,sig:groupSig(key)};log(`Sugerencia grupal abierta · ${GROUP_PLURAL[key]}`);renderSheet(false);}
 function closeSheet(){sheetMode=null;sheet.hidden=true;}
 $('#shClose').addEventListener('click',closeSheet);
@@ -891,6 +1058,7 @@ function emoBlock(T){
 function renderSheet(flash){
   if(!sheetMode)return;
   sheet.hidden=false;
+  if(sheetMode.type==='query'){renderQuery();return;}
   if(sheetMode.type==='student'){
     const T=byId(sheetMode.id);
     if(!T){closeSheet();return;}
@@ -906,19 +1074,7 @@ function renderSheet(flash){
     }
     if(T.body){$('#shSub').textContent=`${whereOf(T)} · solo se ve el cuerpo`;shBody.innerHTML='<p>Se detecta a esta persona por el cuerpo, pero <b>no se ve el rostro</b>, así que todavía no se pueden estimar emociones ni estados.</p><h3>Qué podés hacer</h3><ol><li>Pedile que mire hacia adelante o hacia la cámara.</li><li>Acercate o reubicá la cámara para que entre la cara completa.</li><li>Mientras tanto, observá su postura y pregúntale cómo viene.</li></ol><p class="caveat">Al aparecer el rostro, se calibra solo durante 4 s con cara neutra.</p>';shFoot.innerHTML='<button class="primary" id="fClose">Entendido</button>';$('#fClose').onclick=closeSheet;return;}
     if(T.calib){$('#shSub').textContent=`${whereOf(T)} · calibrando`;shBody.innerHTML='<p>Todavía se está calibrando este rostro (4 s). Pedile cara neutra.</p>';shFoot.innerHTML='<button class="primary" id="fClose">Entendido</button>';$('#fClose').onclick=closeSheet;return;}
-    const t=TIPS[T.state];
-    $('#shSub').textContent=`${whereOf(T)} · hace ${secs(T.stateSince)} con este estado`;
-    const mt=MOOD_TIPS[T.mood];
-    shBody.innerHTML=`<div class="state-row ${flash?'flash':''}"><span class="chip" style="background:${auraColor(T)}">${T.state}</span><span class="chip" style="background:${MOOD_COL[T.mood]}">${MOOD_ADJ[T.mood]}</span></div>
-      <h3 class="first">Medidas</h3>${liveBlock(T)}${emoBlock(T)}
-      <h3>Señales detectadas</h3><ul>${t.senales.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
-      <h3>Qué podés hacer ahora</h3><ol>${t.acciones.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
-      ${mt?`<h3>Sobre su ánimo</h3><p>${esc(mt)}</p>`:''}
-      <h3>Evitá</h3><p class="avoid">${esc(t.evitar)}</p>
-      <p class="caveat">Es una estimación a partir del rostro, calibrada contra su cara neutra. Confirmala con una pregunta o una charla corta; no es un diagnóstico.</p>`;
-    shFoot.innerHTML=`<button id="fNo">No aplica ahora</button><button class="primary" id="fYes">La apliqué</button>`;
-    $('#fYes').onclick=()=>{log(`Sugerencia aplicada · ${T.name} (${T.state})`);closeSheet();};
-    $('#fNo').onclick=()=>{log(`Sugerencia descartada · ${T.name} (${T.state})`);closeSheet();};
+    renderStudentTabs(T);return;
   }else{
     const k=sheetMode.key,who=groupMembers(k),t=TIPS[k];
     const col=k==='Tristeza'?MOOD_COL.Tristeza:STATE_COL[k];
@@ -935,16 +1091,17 @@ function renderSheet(flash){
     $('#fNo').onclick=()=>{log(`Sugerencia grupal descartada · ${GROUP_PLURAL[k]}`);closeSheet();};
   }
 }
+function sheetSig(T){const P=T.prog;return [T.alert,T.calib?1:0,T.body?1:0,T.state,T.mood,P&&P.level,P&&P.hist.length,P&&P.help,sheetMode.tab,sheetMode.layer,T.estimate&&T.estimate.ts].join('|');}
 function liveSheet(){
   if(!sheetMode)return;
   if(sheetMode.type==='group'){const s=groupSig(sheetMode.key);if(s!==sheetMode.sig){sheetMode.sig=s;renderSheet(false);}return;}
+  if(sheetMode.type==='query'){return;}
   const T=byId(sheetMode.id);if(!T){closeSheet();return;}
-  if(T.alert||T.calib){if(!$('#fClose')||sheetMode.body!==!!T.body){sheetMode.body=!!T.body;renderSheet(false);}return;}
-  if(sheetMode.body){sheetMode.body=false;renderSheet(false);return;}
-  if(T.state!==sheetMode.state||!$('#mb-att')){renderSheet(true);return;}
-  MET.forEach(m=>{$('#mb-'+m[0]).style.width=pct(T.m[m[0]])+'%';$('#mv-'+m[0]).textContent=pct(T.m[m[0]])+'%';});
-  MOODS.forEach(k=>{const e=$('#em-'+k);if(!e)return;const v=k==='Neutral'?neutralPct(T):T.emoS[k];e.textContent=`${k} ${pct(v)}%`;e.className=T.mood===k?'on':'';e.style.background=T.mood===k?MOOD_COL[k]:'';});
-  $('#shSub').textContent=`${whereOf(T)} · hace ${secs(T.stateSince)} con este estado`;
+  const sg=sheetSig(T);if(sg!==sheetMode.sig){renderSheet(false);return;}
+  if(T.m&&sheetMode.tab==='est'&&sheetMode.layer===2&&$('#mb-att')){
+    MET.forEach(m=>{$('#mb-'+m[0]).style.width=pct(T.m[m[0]])+'%';$('#mv-'+m[0]).textContent=pct(T.m[m[0]])+'%';});
+    MOODS.forEach(k=>{const e=$('#em-'+k);if(!e)return;const v=k==='Neutral'?neutralPct(T):T.emoS[k];e.textContent=`${k} ${pct(v)}%`;e.className=T.mood===k?'on':'';e.style.background=T.mood===k?MOOD_COL[k]:'';});
+  }
 }
 
 /* ================= alertas ================= */
@@ -957,19 +1114,22 @@ function syncBeep(){const need=active.some(a=>!a.ack);if(need&&!beepTimer){beep(
 const sorted=()=>active.slice().sort((a,b)=>(ALERTS[a.type].rank-ALERTS[b.type].rank)||(b.t-a.t));
 function alertWhere(a){
   const d=ALERTS[a.type];
+  if(a.real){const R=REAL.get(a.real);return (R?R.name:'Alumno')+' · alumno conectado (real)';}
   const ts=a.targets.map(byId).filter(Boolean);
-  if(ts.length)return ts.map(t=>t.name).join(' y ')+' · '+whereOf(ts[0]);
-  return d.where||'Sin alumnos detectados en cámara';
+  const ev=a.evidence?' · '+a.evidence:'';
+  if(ts.length)return ts.map(t=>t.name).join(' y ')+' · '+whereOf(ts[0])+ev;
+  return (d.where||'Sin alumnos detectados en cámara')+ev;
 }
-function triggerAlert(type,targets,sim){
-  if(active.some(a=>a.type===type))return;
+function triggerAlert(type,targets,sim,opts){
+  opts=opts||{};const key0=opts.real||(targets?targets.join():'');
+  if(active.some(a=>a.type===type&&(a.key||'')===key0))return;
   ensureAudio();
   const d=ALERTS[type];
   if(!targets){
     if(S.mode==='demo')targets=d.demo.slice();
     else targets=S.tracks.slice().sort((p,q)=>p.box.x-q.box.x).slice(0,d.n).map(t=>t.id);
   }
-  const a={id:++alertSeq,type:type,t:Date.now(),ack:false,open:d.sev==='Crítica',targets:targets,sim:!!sim};
+  const a={id:++alertSeq,type:type,t:Date.now(),ack:false,open:d.sev==='Crítica',targets:targets,sim:!!sim,key:key0,real:opts.real||null,evidence:opts.evidence||''};
   active.push(a);
   targets.forEach(id=>{const T=byId(id);if(T)T.alert=type;});
   if(d.global==='humo'){$('#smoke').classList.add('on');$('#g-humo').classList.add('on');}
@@ -982,10 +1142,12 @@ function triggerAlert(type,targets,sim){
 function closeAlert(a,why){
   const d=ALERTS[a.type];
   active=active.filter(x=>x!==a);
-  a.targets.forEach(id=>{const T=byId(id);if(T){T.alert=null;T.stateSince=performance.now();T.cool[a.type]=performance.now();}});
+  if(why!=='Reinicio de escenario')ALERT_HIST.push({type:a.type,title:d.title,targets:a.targets.slice(),real:a.real,why:why,t:Date.now(),sim:a.sim,managed:a.ack});
+  if(a.real){const R=REAL.get(a.real);if(R)R.prog.help=false;}
+  a.targets.forEach(id=>{const T=byId(id);if(T){T.alert=null;if(a.type==='ayuda'&&T.prog)T.prog.help=false;T.stateSince=performance.now();T.cool=T.cool||{};T.cool[a.type]=performance.now();}});
   if(d.global==='humo'){$('#smoke').classList.remove('on');$('#g-humo').classList.remove('on');}
   if(d.global==='puerta'){$('#intruder').classList.remove('on');$('#g-puerta').classList.remove('on');}
-  log(`${why} · ${d.title}`);viewIdx=0;renderAlert();refreshHud();syncBeep();refreshAlertBtns();
+  log(`${why} · ${d.title}`);viewIdx=0;renderAlert();refreshHud();syncBeep();refreshAlertBtns();if(window.scnNotify)scnNotify('alertClosed',a,why);
 }
 function renderAlert(){
   const list=sorted();
@@ -1000,13 +1162,13 @@ function renderAlert(){
   $('#alertWhere').textContent=alertWhere(a)+(!a.sim&&d.signal?' · '+d.signal:'');
   const more=$('#alertMore');if(list.length>1){more.hidden=false;more.textContent=`+${list.length-1} más`;}else more.hidden=true;
   const steps=$('#alertSteps');steps.innerHTML=d.steps.map(s=>`<li>${s}</li>`).join('');steps.hidden=!a.open;
-  $('#btnSteps').textContent=a.open?'Ocultar protocolo':'Ver protocolo';
-  $('#btnAck').textContent=a.ack?'Resolver':'Enterado';$('#btnFalse').hidden=a.ack;
+  $('#btnSteps').textContent=a.open?'Ocultar':'Consultar';
+  $('#btnAck').textContent=a.ack?'Resolver':'Gestionar';$('#btnFalse').hidden=false;
 }
 const curAlert=()=>{const l=sorted();return l.length?l[viewIdx%l.length]:null;};
-$('#btnSteps').addEventListener('click',()=>{const a=curAlert();if(a){a.open=!a.open;renderAlert();}});
-$('#btnAck').addEventListener('click',()=>{const a=curAlert();if(!a)return;if(a.ack)closeAlert(a,'Alerta resuelta');else{a.ack=true;log(`Alerta atendida · ${ALERTS[a.type].title}`);renderAlert();syncBeep();}});
-$('#btnFalse').addEventListener('click',()=>{const a=curAlert();if(a)closeAlert(a,'Falso positivo');});
+$('#btnSteps').addEventListener('click',()=>{const a=curAlert();if(a){a.open=!a.open;renderAlert();if(a.open){const id=a.real?'r:'+a.real:a.targets[0];if(id!=null&&byId(id))openStudent(id);}}});
+$('#btnAck').addEventListener('click',()=>{const a=curAlert();if(!a)return;if(a.ack)closeAlert(a,'Alerta resuelta');else{a.ack=true;log(`Alerta en gestión · ${ALERTS[a.type].title}`);if(a.type==='ayuda'&&a.real)toStudent({type:'helpAck',sid:a.real});renderAlert();syncBeep();}});
+$('#btnFalse').addEventListener('click',()=>{const a=curAlert();if(a)closeAlert(a,'Falsa alarma marcada');});
 $('#alertMore').addEventListener('click',()=>{viewIdx++;renderAlert();});
 
 /* detección real: cabeza caída con ojos cerrados, y tristeza sostenida (mismo umbral que la regla "Ánimo" de Lumen alumnos) */
@@ -1211,10 +1373,10 @@ function loop(now){
     if(T.fig){setFace(T,faceKeyFor(T));T.fig.breath.classList.toggle('shake',!!(T.alert&&ALERTS[T.alert].shake));}
     watch(T,now);renderOv(T);
   });
-  if(now-lastUi>500){lastUi=now;refreshHud();liveSheet();if(active.length)renderAlert();}
+  if(now-lastUi>500){lastUi=now;refreshHud();liveSheet();uiTick();if(active.length)renderAlert();}
 }
 setInterval(()=>{ // cambio de actividad simulada en el modo demo
-  if(S.mode!=='demo')return;
+  if(S.mode!=='demo'||S.scn)return;
   const w=CONTEXTS[S.ctx].w;
   S.tracks.forEach(T=>{
     if(T.alert||Math.random()>.07)return;
@@ -1224,14 +1386,235 @@ setInterval(()=>{ // cambio de actividad simulada en el modo demo
   });
 },1000);
 
+const setDetail=()=>{S.detail=$('#detail').checked;scene.classList.toggle('simple',!S.detail);S.tracks.forEach(t=>{if(t.ov)t.ov.last='';});};
+$('#detail').onchange=setDetail;scene.classList.add('simple');
 $('#btnSound').onclick=()=>{S.sound=!S.sound;$('#btnSound').setAttribute('aria-pressed',S.sound?'true':'false');if(!S.sound&&beepTimer){clearInterval(beepTimer);beepTimer=null;}else syncBeep();};
 $('#btnFs').onclick=()=>{try{if(document.fullscreenElement)document.exitFullscreen();else stage.requestFullscreen();}catch(e){}};
 $('#btnPower').onclick=()=>{if(S.mode==='cam')switchToDemo();};
 function fit(){stage.style.setProperty('--u',(stage.clientWidth/100)+'px');}
 fit();new ResizeObserver(fit).observe(stage);
-S.tracks.forEach(renderOv);refreshHud();refreshAlertBtns();
+
+/* ================= v6 · capas 1, 2 y 3 ================= */
+const STRENGTH=v=>v<.5?'débil':v<.7?'moderado':'marcado';
+function certOf(T){const m=T.m,st=T.state,v=st==='Frustrado'?m.fru:st==='Confundido'?m.con:st==='Fatigado'?m.fat:st==='Distraído'?1-m.att:m.att;return STRENGTH(v);}
+const srcBadge=E=>`<span class="badge ${E.src==='real'?'real':E.src==='cam'?'real':'sim'}">${E.src==='real'?'real':E.src==='cam'?'cámara':'simulado'}</span>`;
+const entSrc=E=>E.src||(E.demo?'sim':'cam');
+function sugHtml(T){
+  const r=recommend(T);let h='';
+  if(r.dir)h+=`<div class="rec ${r.dir>0?'up':''}"><b>El sistema sugiere ${r.dir<0?'bajar':'subir'} a nivel ${r.to}.</b><br>${esc(r.why.join(' · '))}.<br><small>Es una sugerencia: la decisión es tuya (Ver más → Capa 3).</small></div>`;
+  if(T.state&&TIPS[T.state]){const t=TIPS[T.state],mt=MOOD_TIPS[T.mood];
+    h+=`<h3>Señales observadas (orientativas)</h3><ul>${t.senales.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h3>Qué podés hacer ahora</h3><ol>${t.acciones.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>${mt?`<h3>Sobre su ánimo</h3><p>${esc(mt)}</p>`:''}<h3>Evitá</h3><p class="avoid">${esc(t.evitar)}</p>`;
+  }else{
+    const bad=T.prog?T.prog.hist.slice(-5).filter(x=>!x.ok):[];
+    h+=`<h3>Qué podés hacer ahora</h3><ol><li>${bad.length?`Repasá con ${esc(T.name)} las cuentas que le costaron: ${esc(bad.map(x=>x.q).join(', '))}.`:'Seguí atento: por ahora no hay dificultades en sus últimas cuentas.'}</li><li>Mirá su progreso y decidí si el nivel actual es adecuado.</li></ol><p class="caveat">Este alumno no comparte cámara con este panel: las sugerencias se basan solo en su progreso.</p>`;
+  }
+  return h;
+}
+function progHtml(T){
+  const P=T.prog;if(!P)return '<p>Este rostro de cámara no tiene progreso asociado: solo hay estimaciones orientativas.</p>';
+  const h=P.hist.slice(-8),ok=h.filter(x=>x.ok).length,ms=h.length?avg(...h.map(x=>x.ms))/1000:0;let streak=0;for(let i=P.hist.length-1;i>=0&&P.hist[i].ok;i--)streak++;
+  const r=recommend(T);
+  return `<h3 class="first">Progreso reciente</h3><div class="kv"><span>Nivel actual</span><b>${esc(LEVEL_NAME[P.level])}</b><span>Aciertos (últimas ${h.length})</span><b>${ok} de ${h.length}</b><span>Tiempo medio</span><b>${ms.toFixed(1)} s</b><span>Racha de aciertos</span><b>${streak}</b><span>Pidió ayuda</span><b>${P.helpCount} vez/veces</b></div>
+    <div class="dots" style="margin:10px 0">${h.map(x=>`<b class="${x.ok?'':'x'}" title="${esc(x.q)}"></b>`).join('')}</div>
+    ${r.dir?`<div class="rec ${r.dir>0?'up':''}">Sugerencia: ${r.dir<0?'bajar':'subir'} a nivel ${r.to}. ${esc(r.why.join(' · '))}.</div>`:'<p class="note">Sin sugerencia de ajuste por ahora.</p>'}
+    <p class="note">Datos ${T.src==='real'?'reales de la sesión del alumno':'simulados para ensayo'}.</p>`;
+}
+function estHtml(T){
+  if(T.src==='real'){const e=T.estimate;if(!e)return '<p>Todavía no hay estimación: el alumno la envía al terminar una actividad.</p>';
+    return `<h3 class="first">Última estimación (al terminar la actividad)</h3><div class="kv"><span>Atención</span><b>${pct(e.att)}%</b><span>Frustración (pico)</span><b>${pct(e.fru)}%</b><span>Confusión (pico)</span><b>${pct(e.con)}%</b><span>Fatiga</span><b>${pct(e.fat)}%</b><span>Ánimo predominante</span><b>${esc(MOOD_ADJ[e.mood]||'neutral')}</b></div><p class="caveat">Estimación incierta y orientativa a partir del rostro. No es un diagnóstico: confirmala hablando con el alumno. El niño no ve estas etiquetas.</p>`;}
+  if(!T.m||T.body||T.calib)return '<p>Todavía no hay estimación para este rostro.</p>';
+  return `<h3 class="first">Posible estado (indicio ${certOf(T)})</h3><div class="state-row"><span class="chip" style="background:${auraColor(T)}">${T.state}</span><span class="chip" style="background:${MOOD_COL[T.mood]}">${MOOD_ADJ[T.mood]}</span></div>${liveBlock(T)}${emoBlock(T)}<p class="caveat">Estimación incierta y orientativa, calibrada contra su cara neutra. No es un diagnóstico y no debe usarse como único motivo para decidir. Confirmala con una pregunta o una charla corta.</p>`;
+}
+function renderStudentTabs(T){
+  const M=sheetMode;M.tab=M.tab||'sug';M.layer=M.layer||2;
+  $('#shSub').innerHTML=`${esc(whereOf(T))} · ${srcBadge(T)} · <span class="layer-tag">Capa ${M.layer}</span>`;
+  if(M.layer===3){renderLayer3(T);M.sig=sheetSig(T);return;}
+  const tabs=[['sug','Sugerencias'],['prog','Progreso'],['est','Estado orientativo']];
+  const body=M.tab==='prog'?progHtml(T):M.tab==='est'?estHtml(T):sugHtml(T);
+  shBody.innerHTML=`<div class="tabs" role="tablist">${tabs.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${M.tab===k}">${l}</button>`).join('')}</div>${body}`;
+  shBody.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{M.tab=b.dataset.tab;renderSheet(false);});
+  shFoot.innerHTML=`<button id="fMore">Ver más</button>${M.tab==='sug'?'<button class="primary" id="fYes">La apliqué</button>':'<button class="primary" id="fClose2">Cerrar</button>'}`;
+  $('#fMore').onclick=()=>{M.layer=3;renderSheet(false);};
+  if($('#fYes'))$('#fYes').onclick=()=>{log(`Sugerencia aplicada · ${T.name}`);closeSheet();};
+  if($('#fClose2'))$('#fClose2').onclick=closeSheet;
+  M.sig=sheetSig(T);
+}
+function renderLayer3(T){
+  const M=sheetMode,P=T.prog,hist=ALERT_HIST.filter(a=>a.targets.includes(T.id)||(T.sid&&a.real===T.sid));
+  let h='';
+  if(P){const r=recommend(T);
+    h+=`<h3 class="first">Control de dificultad</h3><div class="lvlctl"><button id="lvDn" ${P.level<=0?'disabled':''}>− Bajar</button><b>N${P.level}</b><button id="lvUp" ${P.level>=3?'disabled':''}>Subir +</button></div><button class="chipq" id="lvKeep">Mantener el nivel</button>
+      <p class="note">${esc(LEVEL_NAME[P.level])}. ${T.src==='real'?'El cambio se envía al alumno (mismo navegador).':'Alumno simulado: el cambio solo afecta esta demo.'}</p>
+      ${r.dir?`<div class="rec ${r.dir>0?'up':''}"><b>Sugerencia del sistema: ${r.dir<0?'bajar':'subir'} a nivel ${r.to}.</b><br>${esc(r.why.join(' · '))}. La decisión final es tuya.</div>`:'<p class="note">El sistema no sugiere cambios por ahora.</p>'}
+      <h3>Historial de cuentas</h3><div class="hist">${P.hist.slice(-14).reverse().map(x=>`<div><span>${x.ok?'✓':'✗'} ${esc(x.q)}</span><span>${(x.ms/1000).toFixed(1)} s</span></div>`).join('')||'<span class="note">Sin cuentas todavía.</span>'}</div>
+      <h3>Cambios de nivel</h3><div class="hist">${P.decisions.slice().reverse().map(d=>`<div><span>N${d.from} → N${d.to}</span><span>${new Date(d.t).toLocaleTimeString('es-AR',{hour12:false})}</span></div>`).join('')||'<span class="note">Sin cambios.</span>'}</div>`;
+  }
+  h+=`<h3>Datos de contexto</h3><div class="kv"><span>Actividad</span><b>Matemática</b><span>Momento de clase</span><b>${esc(CONTEXTS[S.ctx].label)}</b><span>Ayudas pedidas</span><b>${P?P.helpCount:0}</b><span>Origen de los datos</span><b>${T.src==='real'?'Real':T.src==='sim'?'Simulado':'Cámara (estimación)'}</b>${T.state?`<span>Estado orientativo</span><b>${esc(T.state)} (indicio ${certOf(T)})</b>`:''}</div>
+    <h3>Alertas previas</h3><div class="hist">${hist.map(a=>`<div><span>${esc(a.title)}</span><span>${esc(a.why)}</span></div>`).join('')||'<span class="note">Ninguna.</span>'}</div>`;
+  shBody.innerHTML=h;
+  shFoot.innerHTML='<button id="fBack">← Volver (capa 2)</button><button class="primary" id="fClose3">Cerrar</button>';
+  $('#fBack').onclick=()=>{M.layer=2;renderSheet(false);};$('#fClose3').onclick=closeSheet;
+  if(P){
+    $('#lvDn').onclick=()=>{setLevel(T,P.level-1,'decisión del docente');renderSheet(false);};
+    $('#lvUp').onclick=()=>{setLevel(T,P.level+1,'decisión del docente');renderSheet(false);};
+    $('#lvKeep').onclick=()=>{P.decisions.push({t:Date.now(),from:P.level,to:P.level,why:'mantener'});log(`Nivel de ${T.name}: se mantiene en ${P.level} (decisión del docente)`);if(window.scnNotify)scnNotify('keep',T);renderSheet(false);};
+  }
+}
+
+/* ---- capa 1: tarjetas de alumnos ---- */
+S.src='sim';
+function entities(src){
+  if(src==='sim')return S.mode==='demo'?S.tracks.filter(t=>t.demo):[];
+  return [...REAL.values(),...(S.mode==='cam'?S.tracks.map(t=>{t.src='cam';return t;}):[])];
+}
+let rosterSig='';
+function renderRoster(){
+  const ents=entities(S.src);
+  const sig=S.src+'|'+ents.map(E=>[E.id,statusOf(E).k,E.prog&&E.prog.level,E.prog&&E.prog.hist.length,E.name].join(':')).join(',');
+  if(sig===rosterSig)return;rosterSig=sig;
+  $('#tiles').innerHTML=ents.map(E=>{const st=statusOf(E),P=E.prog;
+    return `<button class="tile ${st.k}" data-id="${E.id}" aria-label="${esc(E.name)}: ${esc(st.txt)}${P?', nivel '+P.level:''}"><span class="nm"><span>${esc(E.name)}</span>${P?`<span class="lv">N${P.level}</span>`:''}</span><span class="st"><i aria-hidden="true">${st.ico}</i>${esc(st.txt)}</span>${P?`<span class="dots">${P.hist.slice(-8).map(x=>`<b class="${x.ok?'':'x'}"></b>`).join('')}</span>`:''}</button>`;}).join('')||`<p class="note">${S.src==='sim'?'Pasá al modo demo para ver alumnos simulados.':'Todavía no hay alumnos reales conectados. Abrí Lumen alumnos en este mismo navegador y tocá Iniciar.'}</p>`;
+  $('#tiles').querySelectorAll('.tile').forEach(b=>b.onclick=()=>{const id=b.dataset.id;openStudent(id.startsWith('r:')?id:+id);});
+  $('#rosterNote').innerHTML=S.src==='sim'?'<span class="badge sim">simulado</span> Alumnos y progreso inventados para ensayar. No son personas reales.':'<span class="badge real">real</span> Alumnos que abrieron Lumen alumnos en este navegador, y rostros de la cámara del aula (estimación orientativa, sin progreso).';
+}
+$('#srcSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.src=b.dataset.s;$('#srcSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));rosterSig='';classSig='';uiTick();});
+
+/* ---- panel general de la clase ---- */
+let classSig='';
+const QUERIES={help:{label:'Pidieron ayuda',test:E=>E.prog&&E.prog.help,note:'Alumnos que tocaron el botón de ayuda y todavía no fueron atendidos.'},
+  dif:{label:'Con dificultad',test:E=>recommend(E).dir<0,note:'Varios errores seguidos: el sistema sugiere bajar el nivel. Vos decidís.'},
+  fast:{label:'Ritmo rápido',test:E=>recommend(E).dir>0,note:'Cuentas seguidas correctas y rápidas: el sistema sugiere subir el nivel. Vos decidís.'},
+  n0:{label:'En nivel 0',test:E=>E.prog&&E.prog.level===0,note:'Alumnos que responden mostrando cantidades con los dedos.'}};
+function progEnts(){return entities(S.src).filter(E=>E.prog);}
+function renderClass(){
+  const ents=progEnts(),all=entities(S.src);
+  const sig=S.src+'|'+ents.map(E=>[E.id,E.prog.level,E.prog.hist.length,statusOf(E).k].join(':')).join(',');
+  const b=$('#classBadge');b.textContent=S.src==='sim'?'simulado':'real';b.className='badge '+(S.src==='sim'?'sim':'real');
+  if(sig===classSig)return;classSig=sig;
+  $('#clN').textContent=all.length;$('#clAcc').textContent=ents.length?pct(avg(...ents.map(accOf)))+'%':'—';$('#clItems').textContent=ents.reduce((a,E)=>a+E.prog.hist.length,0);
+  const cnt=[0,1,2,3].map(l=>ents.filter(E=>E.prog.level===l).length),mx=Math.max(1,...cnt);
+  $('#clDist').innerHTML=cnt.map((n,l)=>`<div><span>${n}</span><i style="height:${Math.round(n/mx*48)+2}px"></i>N${l}</div>`).join('');
+  const need=ents.filter(E=>{const k=statusOf(E).k;return k==='help'||k==='watch'||k==='alert';});
+  $('#clNeed').innerHTML=need.map(E=>`<button data-id="${E.id}">${esc(E.name)} · ${esc(statusOf(E).txt)}</button>`).join('')||'<span class="note">Nadie por ahora.</span>';
+  $('#clNeed').querySelectorAll('button').forEach(x=>x.onclick=()=>{const id=x.dataset.id;openStudent(id.startsWith('r:')?id:+id);});
+  $('#clQ').innerHTML=Object.keys(QUERIES).map(k=>{const n=ents.filter(QUERIES[k].test).length;return `<button class="chipq" data-q="${k}" ${n?'':'disabled'}>${QUERIES[k].label} <b>${n}</b></button>`;}).join('');
+  $('#clQ').querySelectorAll('button').forEach(x=>x.onclick=()=>openQuery(x.dataset.q));
+}
+function openQuery(k){sheetMode={type:'query',key:k,confirm:null};log(`Grupo consultado · ${QUERIES[k].label}`);if(window.scnNotify)scnNotify('query',null,k);renderSheet(false);}
+function renderQuery(){
+  const M=sheetMode,Q=QUERIES[M.key],who=progEnts().filter(Q.test);
+  $('#shAvatar').textContent=who.length;$('#shAvatar').style.background=M.key==='fast'?'#6df7d0':'#ffb347';
+  $('#sheetTitle').textContent='Grupo: '+Q.label;
+  $('#shSub').innerHTML=`${who.length} de ${progEnts().length} alumnos · <span class="badge ${S.src==='sim'?'sim':'real'}">${S.src==='sim'?'simulado':'real'}</span>`;
+  const delta=M.key==='dif'?-1:M.key==='fast'?1:0;
+  shBody.innerHTML=`<h3 class="first">Qué muestra</h3><p>${esc(Q.note)}</p><h3>Alumnos</h3><div class="names">${who.map(E=>`<button data-id="${E.id}">${esc(E.name)} · N${E.prog.level}</button>`).join('')||'<span class="note">Nadie en este grupo ahora.</span>'}</div>
+    ${delta&&who.length?`<h3>Decisión del grupo</h3><p class="note">Podés ajustar el nivel de todos juntos o decidir alumno por alumno (tocá un nombre).</p>`:''}
+    ${M.confirm?`<div class="confirm"><b>¿${delta<0?'Bajar':'Subir'} un nivel a ${who.length} alumno${who.length===1?'':'s'}?</b><br>Cada uno cambia de nivel y queda registrado. Podés revertirlo desde su ficha.<div class="lvlctl"><button id="qNo">Cancelar</button><button id="qYes" style="background:linear-gradient(135deg,#ffe9b0,#ffb36b);color:#2a1604">Sí, aplicar</button></div></div>`:''}`;
+  shBody.querySelectorAll('.names button').forEach(b=>b.onclick=()=>{const id=b.dataset.id;openStudent(id.startsWith('r:')?id:+id);});
+  shFoot.innerHTML=(delta&&who.length&&!M.confirm?`<button class="primary" id="qGo">${delta<0?'Bajar':'Subir'} el nivel al grupo…</button>`:'')+'<button id="qClose">Cerrar</button>';
+  if($('#qGo'))$('#qGo').onclick=()=>{M.confirm=true;renderSheet(false);};
+  if($('#qNo'))$('#qNo').onclick=()=>{M.confirm=null;renderSheet(false);};
+  if($('#qYes'))$('#qYes').onclick=()=>{who.forEach(E=>setLevel(E,E.prog.level+delta,'decisión grupal del docente'));log(`Cambio grupal: ${who.length} alumno(s) ${delta<0?'bajan':'suben'} un nivel`);if(window.scnNotify)scnNotify('group',null,{n:who.length,delta});closeSheet();};
+  $('#qClose').onclick=closeSheet;
+}
+
+/* ================= v6 · canal con Lumen alumnos (alumnos reales) ================= */
+function onBus(m){
+  if(!m||m.from!=='student'||!m.sid)return;
+  let R=REAL.get(m.sid);
+  if(!R){if(m.type==='bye')return;R={id:'r:'+m.sid,sid:m.sid,name:m.name||'Alumno',src:'real',demo:false,box:{x:600,y:0,w:0,h:0},alert:null,state:null,mood:null,m:null,online:true,estimate:null,
+      prog:{level:m.level==null?1:m.level,startLevel:m.level==null?1:m.level,help:false,helpCount:0,decisions:[],hist:[]}};REAL.set(m.sid,R);log(`Alumno real conectado · ${R.name}`);
+    if(S.mode!=='demo'&&S.src!=='real'){S.src='real';$('#srcSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.s==='real'?'true':'false'));}}
+  R.name=m.name||R.name;R.online=m.type!=='bye';
+  if(m.type==='hello'||m.type==='level'){if(m.level!=null)R.prog.level=m.level;}
+  else if(m.type==='progress'){R.prog.level=m.level;R.prog.hist.push({q:m.item,ok:m.st==='ok'||m.st==='retry',ms:m.ms,act:'Matemática'});if(R.prog.hist.length>40)R.prog.hist.shift();}
+  else if(m.type==='help'){R.prog.help=true;R.prog.helpCount++;log(`Solicitud de ayuda · ${R.name}${m.item?' ('+m.item+')':''}`,'alert');triggerAlert('ayuda',[],false,{real:m.sid,evidence:m.item?'Estaba en '+m.item:''});}
+  else if(m.type==='checkin'){log(`Pausa ofrecida · ${R.name} eligió ${m.choice==='pausa'?'hacer una pausa':'seguir'} (${m.activity})`);}
+  else if(m.type==='result'){R.estimate={...m.estimate,ts:m.ts};log(`Resultado recibido · ${R.name} (${m.activity})`);}
+  rosterSig='';classSig='';
+}
+try{const ch=new BroadcastChannel('lumen-bus');ch.onmessage=e=>onBus(e.data);}catch(e){}
+addEventListener('storage',e=>{if(e.key==='lumen:bus'&&e.newValue){try{onBus(JSON.parse(e.newValue));}catch(x){}}});
+
+/* ================= v6 · escenarios deterministas (solo demo) ================= */
+const E_=i=>S.tracks.find(t=>t.id===i);
+function setHist(E,pattern,ms){const b=QBANK[E.prog.level];E.prog.hist=[...pattern].map((c,i)=>({q:b[i%b.length],ok:c==='o',ms:ms+i*97,act:'Matemática'}));}
+const SCN=[
+  {name:'Posible frustración',who:4,goal:'Un alumno acumula errores. Consultá su ficha y decidí si bajar el nivel.',init:'Tomás (Mesa 2) está en nivel 2 con 3 aciertos seguidos.',
+   todo:'Tocá la tarjeta de Tomás → Progreso → Ver más → Bajar (o Mantener).',
+   setup(){const E=E_(4);E.prog.level=2;E.prog.startLevel=2;setHist(E,'ooo',5200);},
+   steps:[{t:2,say:'Tomás se equivoca en 43 − 18.',fn(){const E=E_(4);addItem(E,false,9400,'43 − 18');}},{t:5,say:'Segundo error seguido; tarda más de lo habitual.',fn(){const E=E_(4);E.preset='Confundido';addItem(E,false,11200,'52 − 27');}},
+          {t:8,say:'Tercer error. Su estado orientativo pasa a «posible frustración».',fn(){const E=E_(4);E.preset='Frustrado';addItem(E,false,12800,'36 + 29');}},{t:11,say:'Cuarto error seguido: aparece la sugerencia de ajuste en su tarjeta.',fn(){addItem(E_(4),false,10100,'61 − 34');}}],
+   watch(k,E){if(k==='level'&&E.id===4)return E.prog.level<E.prog.startLevel?`Bajaste a ${E.name} de nivel ${E.prog.startLevel} a ${E.prog.level}. Resultado esperado alcanzado.`:`Subiste el nivel de ${E.name}: decisión tuya, aunque el sistema sugería bajar.`;if(k==='keep'&&E.id===4)return `Decidiste mantener a ${E.name} en nivel ${E.prog.level}. La decisión es válida: quedó registrada.`;}},
+  {name:'Progreso acelerado',who:7,goal:'Un alumno responde todo bien y rápido. Consultá su evolución y decidí si subir la dificultad.',init:'Camila (Mesa 4) está en nivel 1, sin cuentas todavía.',
+   todo:'Tocá la tarjeta de Camila → Progreso → Ver más → Subir.',
+   setup(){const E=E_(7);E.prog.level=1;E.prog.startLevel=1;E.prog.hist=[];},
+   steps:[{t:1,say:'Camila acierta 6 + 8 en 3,2 s.',fn(){addItem(E_(7),true,3200,'6 + 8');}},{t:3,say:'Acierta 12 − 5.',fn(){E_(7).preset='Contento';addItem(E_(7),true,3600,'12 − 5');}},{t:5,say:'Acierta 7 + 9.',fn(){addItem(E_(7),true,3900,'7 + 9');}},{t:7,say:'Acierta 14 − 6.',fn(){addItem(E_(7),true,4100,'14 − 6');}},{t:9,say:'Cinco aciertos seguidos y rápidos: aparece la sugerencia de subir.',fn(){addItem(E_(7),true,3800,'9 + 5');}}],
+   watch(k,E){if(k==='level'&&E.id===7)return E.prog.level>E.prog.startLevel?`Subiste a ${E.name} de nivel ${E.prog.startLevel} a ${E.prog.level}. Resultado esperado alcanzado.`:`Bajaste el nivel de ${E.name}: decisión tuya.`;if(k==='keep'&&E.id===7)return `Decidiste mantener a ${E.name} en nivel ${E.prog.level}. Quedó registrado.`;}},
+  {name:'Solicitud de ayuda',who:3,goal:'Un alumno toca el botón de ayuda. Gestioná la solicitud y resolvela.',init:'Sofía (Mesa 2) trabaja en nivel 2 con un error reciente.',
+   todo:'En la alerta tocá Consultar → Gestionar → Resolver.',
+   setup(){const E=E_(3);E.prog.level=2;E.prog.startLevel=2;setHist(E,'ooxo',6000);},
+   steps:[{t:2,say:'Sofía se traba en 27 + 15 (9 s sin responder).',fn(){addItem(E_(3),false,9000,'27 + 15');}},{t:4,say:'Sofía toca el botón de ayuda. Llega la notificación.',fn(){const E=E_(3);E.prog.help=true;E.prog.helpCount++;triggerAlert('ayuda',[3],true,{evidence:'Estaba en 27 + 15'});}}],
+   watch(k,E,x){if(k==='alertClosed'&&E.type==='ayuda')return /Falsa/.test(x)?'Marcaste la solicitud como falsa alarma.':(E.ack?'Gestionaste y resolviste la solicitud de ayuda. Resultado esperado alcanzado.':'Resolviste la solicitud sin pasar por Gestionar.');}},
+  {name:'Falsa alarma',who:2,goal:'Una alerta de movimiento inusual. Examinala y marcala como falsa alarma si no hay motivo.',init:'Joaquín (Mesa 1) trabaja con normalidad en nivel 1.',
+   todo:'En la alerta tocá Consultar, mirá la evidencia y elegí Falsa alarma.',
+   setup(){const E=E_(2);E.prog.level=1;E.prog.startLevel=1;setHist(E,'oooo',4200);},
+   steps:[{t:3,say:'El sistema detecta un movimiento brusco de 1,2 s en Joaquín (simulado).',fn(){triggerAlert('movimiento',[2],true,{evidence:'Movimiento brusco de 1,2 s; sin otras señales; sin pedido de ayuda'});}},{t:6,say:'No hay errores nuevos ni pedido de ayuda: la evidencia es escasa.',fn(){addItem(E_(2),true,4000);}}],
+   watch(k,E,x){if(k==='alertClosed'&&E.type==='movimiento')return /Falsa/.test(x)?'Marcaste falsa alarma. Resultado esperado alcanzado.':'Cerraste la alerta sin marcarla como falsa alarma.';}},
+  {name:'Posible malestar',who:1,goal:'Indicios inciertos de posible malestar. Decidí si intervenir; el sistema no diagnostica.',init:'Martina (Mesa 1) trabaja en nivel 1 con ánimo neutro.',
+   todo:'En la alerta tocá Consultar → mirá «Estado orientativo» → Gestionar o Falsa alarma.',
+   setup(){const E=E_(1);E.prog.level=1;E.prog.startLevel=1;setHist(E,'ooxo',5800);},
+   steps:[{t:2,say:'Martina muestra señales leves de desánimo.',fn(){E_(1).preset='Triste';}},{t:5,say:'Después, cabeza más baja y ojos más cerrados.',fn(){E_(1).preset='Fatigado';}},{t:8,say:'Indicios sostenidos: alerta de posible malestar, con baja certeza.',fn(){triggerAlert('angustia',[1],true,{evidence:'indicios de cansancio o desánimo durante 6 s · certeza baja (≈45 %) · sin pedido de ayuda'});}}],
+   watch(k,E,x){if(k==='alertClosed'&&E.type==='angustia')return /Falsa/.test(x)?'Marcaste los indicios como falsa alarma.':(E.ack?'Gestionaste la alerta y la resolviste. La decisión de intervenir fue tuya.':'Resolviste la alerta sin gestionarla.');}},
+  {name:'Dificultad grupal',who:[0,1,2,3],goal:'Varios alumnos fallan en la misma actividad. Consultá el resumen de la clase y analizá al grupo.',init:'Lucas, Martina, Joaquín y Sofía están en nivel 2 con buen ritmo.',
+   todo:'En «Resumen de la clase» tocá «Con dificultad» → decidí bajar el nivel al grupo.',
+   setup(){[0,1,2,3].forEach(i=>{const E=E_(i);E.prog.level=2;E.prog.startLevel=2;setHist(E,'oo',5000);});},
+   steps:[1,5,9].flatMap((t0,r)=>[0,1,2,3].map((id,j)=>({t:t0+j*.8,say:j===3?(r===0?'Primeras cuentas de restas con llevadas: 4 errores.':r===1?'Segunda ronda: vuelven a fallar.':'Tercera ronda: 4 de 10 alumnos con dificultad en restas con llevadas.'):'',fn(){const E=E_(id);if(r===1)E.preset='Confundido';addItem(E,false,10500+id*300,['52 − 27','61 − 34','43 − 18'][r]);}}))),
+   watch(k,E,x){if(k==='group'&&x.delta<0)return `Bajaste un nivel a ${x.n} alumnos. Resultado esperado alcanzado.`;if(k==='group')return `Subiste un nivel a ${x.n} alumnos: decisión tuya.`;if(k==='query'&&x==='dif')return null;}}
+];
+let SC=null;
+function scnReset(){
+  active.slice().forEach(a=>closeAlert(a,'Reinicio de escenario'));
+  clearTracks();S.seq=0;buildDemoStudents();S.tracks.forEach(warmUp);S.ctx='explicacion';
+  ALERT_HIST.length=0;rosterSig='';classSig='';
+}
+function scnStart(i){
+  if(S.mode!=='demo')return;
+  scnReset();const d=SCN[i];S.scn=i+1;SC={i:i,t0:performance.now(),next:0,res:null,notes:[]};
+  d.setup();log(`Escenario ${i+1} iniciado · ${d.name} (simulado)`);renderScn();
+}
+function scnStop(){SC=null;S.scn=null;scnReset();renderScn();}
+function scnFire(){const d=SCN[SC.i],st=d.steps[SC.next++];st.fn();if(st.say)SC.notes.push(st.say);rosterSig='';classSig='';renderScn();}
+function scnTick(now){if(!SC)return;const el=(now-SC.t0)/1000,d=SCN[SC.i];while(SC.next<d.steps.length&&el>=d.steps[SC.next].t)scnFire();}
+window.scnNotify=function(kind,E,x){if(!SC||SC.res)return;const d=SCN[SC.i];const r=d.watch&&d.watch(kind,E,x);if(r){SC.res=r;renderScn();}};
+function renderScn(){
+  const demo=S.mode==='demo';
+  $('#scnBtns').innerHTML=SCN.map((d,i)=>`<button data-i="${i}" aria-pressed="${SC&&SC.i===i}" ${demo?'':'disabled'}>${i+1}. ${esc(d.name)}</button>`).join('');
+  $('#scnBtns').querySelectorAll('button').forEach(b=>b.onclick=()=>scnStart(+b.dataset.i));
+  const box=$('#scnInfo');
+  if(!SC){box.innerHTML=`<p class="note">${demo?'Elegí un escenario. Todos empiezan igual, no dependen del azar y se pueden repetir. Sirven para ensayar el test de usabilidad.':'Los escenarios son solo para el modo demo (datos simulados). Volvé a «Modo demo» para usarlos.'}</p>`;return;}
+  const d=SCN[SC.i],seen=d.steps.slice(0,SC.next).filter(s=>s.say);
+  box.innerHTML=`<h3>${SC.i+1}. ${esc(d.name)}</h3><p>${esc(d.goal)}</p><p class="note"><b>Estado inicial:</b> ${esc(d.init)}</p>
+    <ul class="scn-steps">${seen.map(s=>`<li class="done">${esc(s.say)}</li>`).join('')}${SC.next<d.steps.length?'<li>… siguiente evento pendiente</li>':''}</ul>
+    <p class="note"><b>Qué hacer:</b> ${esc(d.todo)}</p>
+    <div class="scn-res ${SC.res?'ok':''}" role="status"><b>Resultado:</b> ${SC.res?esc(SC.res):(SC.next<d.steps.length?'esperando los eventos…':'esperando tu decisión')}</div>
+    <div class="scn-ctl"><button class="btn" id="scnNext" ${SC.next<d.steps.length?'':'disabled'}>Siguiente evento</button><button class="btn" id="scnRe">Reiniciar</button><button class="btn" id="scnEnd">Terminar</button></div>`;
+  $('#scnNext').onclick=scnFire;$('#scnRe').onclick=()=>scnStart(SC.i);$('#scnEnd').onclick=scnStop;
+}
+setInterval(()=>scnTick(performance.now()),200);
+
+/* ---- refresco de la interfaz de capas ---- */
+let lastMode=null;
+function uiTick(){
+  if(lastMode!==S.mode){lastMode=S.mode;if(S.mode==='cam'&&S.src==='sim'||S.mode==='demo'&&S.src==='real'&&!REAL.size){S.src=S.mode==='cam'?'real':'sim';$('#srcSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.s===S.src?'true':'false'));}
+    if(S.mode!=='demo'&&SC){SC=null;S.scn=null;}renderScn();rosterSig='';classSig='';}
+  renderRoster();renderClass();
+}
+renderScn();
+
+S.tracks.forEach(renderOv);refreshHud();refreshAlertBtns();uiTick();
 requestAnimationFrame(loop);
-window.__lumen={S,triggerAlert,stateWord};
+window.__lumen={S,triggerAlert,stateWord,scnStart,scnFire,scnStop,getSC:()=>SC,SCN,openStudent,setLevel,recommend,statusOf,byId,REAL,ALERT_HIST,onBus,openQuery,getActive:()=>active,closeAlert};
 </script>
 </body>
 </html>
